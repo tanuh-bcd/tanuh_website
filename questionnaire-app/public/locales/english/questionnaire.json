@@ -237,7 +237,7 @@
     },
     "Q25": {
       "question": "Age of death",
-      "answers": ["North Indian", "South Indian", "East Indian", "West Indian", "North-East Indian", "Central Indian / Tribal Communities", "Mixed / Other Indian Ethnicity", "Non-Resident Indian (NRI)", "Others"]
+      "answers": []
     },
     "Q26": {
       "question": "Please select their ethnicity:",

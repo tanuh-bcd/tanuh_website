@@ -13,6 +13,7 @@ dist-ssr
 *.local
 .env
 backend/.env
+mygpgkey.asc
 
 # Editor directories and files
 .vscode/*
