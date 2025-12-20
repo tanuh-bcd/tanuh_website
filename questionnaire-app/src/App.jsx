@@ -99,6 +99,7 @@ function App() {
         setFinalFormData(null);
       }
     } catch (error) {
+      void error; // Suppress unused var
       alert('Could not connect to the server to submit the form.'); // Generic error
       setFinalFormData(null);
     } finally {
