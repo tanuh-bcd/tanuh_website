@@ -120,7 +120,7 @@ function ThankYou({ riskResult, formData, sessionId, formStructure, questionnair
             y = 32;
         };
 
-        const addFooter = (pageNumber, totalPages) => {
+        const addFooter = (pageNumber) => {
             doc.setFont('helvetica', 'normal');
             doc.setFontSize(8);
             doc.setTextColor(150);

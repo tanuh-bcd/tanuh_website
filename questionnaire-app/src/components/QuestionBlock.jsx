@@ -231,21 +231,58 @@ const QuestionBlock = ({
   );
 };
 
+// Helper: Recursively checks if any relevant data in the subtree has changed.
+// This prevents unnecessary re-renders when typing in unrelated fields.
+const hasSubtreeDataChanged = (subQuestions, prevData, nextData, prevDataEn, nextDataEn) => {
+  if (!subQuestions || !Array.isArray(subQuestions)) return false;
+
+  for (const subQ of subQuestions) {
+    const key = subQ.name || subQ.key;
+    // 1. Check if value changed for this subquestion
+    if (prevData[key] !== nextData[key]) return true;
+
+    // 2. Check if condition key changed (for visibility)
+    if (subQ.condition) {
+       const conditionKey = subQ.condition.key;
+       // The condition check usually relies on English data (as per implementation)
+       if (prevDataEn[conditionKey] !== nextDataEn[conditionKey]) return true;
+    }
+
+    // 3. Recurse for nested subquestions
+    if (subQ.subQuestions && subQ.subQuestions.length > 0) {
+      if (hasSubtreeDataChanged(subQ.subQuestions, prevData, nextData, prevDataEn, nextDataEn)) {
+        return true;
+      }
+    }
+  }
+  return false;
+};
+
+
 // Custom Comparator
 const arePropsEqual = (prev, next) => {
   const name = next.qConfig.name || next.qConfig.key;
 
   // 1. Check strict dependencies (including i18n)
-  if (prev.t !== next.t) return false; // FIX: Language change detection
-  if (prev.questionnaireData !== next.questionnaireData) return false; // FIX: Data change
+  if (prev.t !== next.t) return false; // Language change
+  if (prev.questionnaireData !== next.questionnaireData) return false; // Data change
 
   if (prev.qConfig !== next.qConfig) return false;
   if (prev.displayNumber !== next.displayNumber) return false;
-  if (prev.validationErrors.includes(name) !== next.validationErrors.includes(name)) return false;
 
-  if (prev.randomPatientId !== next.randomPatientId) return false; // FIX: Q44 dependency
+  // FIX: Check if validation errors changed globally.
+  // Although checking `includes(name)` is good for *this* component,
+  // subcomponents depend on their own names being in validationErrors.
+  // Since we don't want to traverse the entire subtree to find if *any* subquestion has an error,
+  // and validation only happens on submit (rare event compared to typing),
+  // we can simply re-render if the validationErrors array reference changes.
+  // In `Questionnaire.jsx`, `setValidationErrors` creates a new array.
+  // So if validation runs and errors change, we update.
+  if (prev.validationErrors !== next.validationErrors) return false;
 
-  // 2. Check value change
+  if (prev.randomPatientId !== next.randomPatientId) return false; // Q44 dependency
+
+  // 2. Check value change for this component
   if (prev.formData[name] !== next.formData[name]) return false;
 
   // 3. Check Q27 specifics
@@ -255,9 +292,25 @@ const arePropsEqual = (prev, next) => {
     if (prev.q27VideoConfirmed !== next.q27VideoConfirmed) return false;
   }
 
-  // 4. Subquestions check
+  // 4. Subquestions check - OPTIMIZED
   if (next.qConfig.subQuestions && next.qConfig.subQuestions.length > 0) {
-      return false;
+      // Instead of blindly returning false, we check if any data in the subtree changed.
+      // We need to check both formData (for values) and formDataEn (for conditions).
+      const changed = hasSubtreeDataChanged(
+        next.qConfig.subQuestions,
+        prev.formData,
+        next.formData,
+        prev.formDataEn,
+        next.formDataEn
+      );
+      if (changed) return false;
+
+      // Also, we must check if the condition for the *immediate* subquestions visibility changed.
+      // The parent QuestionBlock (this one) shows subquestions if `qConfig.condition` is met.
+      if (next.qConfig.condition) {
+         const condKey = next.qConfig.condition.key;
+         if (prev.formDataEn[condKey] !== next.formDataEn[condKey]) return false;
+      }
   }
 
   return true;
