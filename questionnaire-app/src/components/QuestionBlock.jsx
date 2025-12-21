@@ -231,6 +231,35 @@ const QuestionBlock = ({
   );
 };
 
+// Recursive check to see if any data in the subtree has changed.
+// This allows us to memoize questions with subquestions, provided their descendant data hasn't changed.
+const hasSubtreeDataChanged = (subQuestions, prevData, nextData, prevDataEn, nextDataEn) => {
+  if (!subQuestions || !Array.isArray(subQuestions) || subQuestions.length === 0) return false;
+
+  for (const subQ of subQuestions) {
+    const key = subQ.name || subQ.key;
+
+    // Check if the answer for this sub-question changed
+    if (prevData[key] !== nextData[key]) return true;
+
+    // Check if the condition for this sub-question changed (visibility)
+    if (subQ.condition) {
+       const condKey = subQ.condition.key;
+       // We check English data because renderSubQuestions uses formDataEn for condition checks
+       if (prevDataEn[condKey] !== nextDataEn[condKey]) return true;
+    }
+
+    // Recursively check children of this sub-question
+    if (subQ.subQuestions && subQ.subQuestions.length > 0) {
+        if (hasSubtreeDataChanged(subQ.subQuestions, prevData, nextData, prevDataEn, nextDataEn)) {
+            return true;
+        }
+    }
+  }
+
+  return false;
+};
+
 // Custom Comparator
 const arePropsEqual = (prev, next) => {
   const name = next.qConfig.name || next.qConfig.key;
@@ -256,8 +285,18 @@ const arePropsEqual = (prev, next) => {
   }
 
   // 4. Subquestions check
+  // Optimization: Instead of blindly returning false for questions with subquestions,
+  // we check if any data relevant to the sub-questions (values or conditions) has actually changed.
   if (next.qConfig.subQuestions && next.qConfig.subQuestions.length > 0) {
-      return false;
+      if (hasSubtreeDataChanged(
+          next.qConfig.subQuestions,
+          prev.formData,
+          next.formData,
+          prev.formDataEn,
+          next.formDataEn
+      )) {
+          return false;
+      }
   }
 
   return true;
