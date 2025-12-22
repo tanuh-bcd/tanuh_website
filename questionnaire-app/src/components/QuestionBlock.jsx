@@ -231,6 +231,19 @@ const QuestionBlock = ({
   );
 };
 
+// Helper to recursively collect all keys in a subtree (questions and conditions)
+const getSubtreeKeys = (qConfig, keys = new Set()) => {
+  if (qConfig.subQuestions && Array.isArray(qConfig.subQuestions)) {
+    qConfig.subQuestions.forEach(sub => {
+      const key = sub.name || sub.key;
+      if (key) keys.add(key);
+      if (sub.condition && sub.condition.key) keys.add(sub.condition.key);
+      getSubtreeKeys(sub, keys);
+    });
+  }
+  return keys;
+};
+
 // Custom Comparator
 const arePropsEqual = (prev, next) => {
   const name = next.qConfig.name || next.qConfig.key;
@@ -241,6 +254,13 @@ const arePropsEqual = (prev, next) => {
 
   if (prev.qConfig !== next.qConfig) return false;
   if (prev.displayNumber !== next.displayNumber) return false;
+
+  // Check validation errors change
+  if (prev.validationErrors !== next.validationErrors) {
+      // If validation errors changed (e.g. on submit), we should re-render to ensure children
+      // receive the new error list. This is a rare event (submit only).
+      return false;
+  }
   if (prev.validationErrors.includes(name) !== next.validationErrors.includes(name)) return false;
 
   if (prev.randomPatientId !== next.randomPatientId) return false; // FIX: Q44 dependency
@@ -255,9 +275,15 @@ const arePropsEqual = (prev, next) => {
     if (prev.q27VideoConfirmed !== next.q27VideoConfirmed) return false;
   }
 
-  // 4. Subquestions check
+  // 4. Subquestions check - OPTIMIZED
   if (next.qConfig.subQuestions && next.qConfig.subQuestions.length > 0) {
-      return false;
+      const relatedKeys = getSubtreeKeys(next.qConfig);
+      for (const key of relatedKeys) {
+          if (prev.formData[key] !== next.formData[key]) return false;
+          // We also check formDataEn because conditions might rely on English values
+          if (prev.formDataEn[key] !== next.formDataEn[key]) return false;
+      }
+      // If no related keys changed, we can safely return true
   }
 
   return true;
