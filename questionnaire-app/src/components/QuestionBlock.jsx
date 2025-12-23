@@ -4,6 +4,45 @@ import React, { memo } from 'react';
 // The Questionnaire component renders many of these blocks.
 // Memoization prevents re-rendering all questions when typing in a single field,
 // provided the custom comparator filters out unrelated state changes.
+
+// Helper to recursively check if any subquestion's dependencies have changed
+const checkSubtreeUpdates = (subQuestions, prev, next) => {
+  if (!Array.isArray(subQuestions) || subQuestions.length === 0) return false;
+
+  for (const subQ of subQuestions) {
+    const key = subQ.name || subQ.key;
+
+    // 1. Check if the subquestion's OWN value changed in formData
+    if (prev.formData[key] !== next.formData[key]) return true;
+
+    // 2. Check for auxiliary fields (like "Other" text inputs)
+    // Some question types (like checkbox-plus-text) use a separate ID for the text input.
+    if (subQ.otherOptionId) {
+        if (prev.formData[subQ.otherOptionId] !== next.formData[subQ.otherOptionId]) return true;
+    }
+
+    // 3. Check if validation error status changed for this subquestion
+    const prevHasError = prev.validationErrors.includes(key);
+    const nextHasError = next.validationErrors.includes(key);
+    if (prevHasError !== nextHasError) return true;
+
+    // 4. Check if the condition that controls this subquestion changed
+    // If the condition value changes, the parent needs to re-render to update
+    // the list of children rendered (via renderSubQuestions).
+    if (subQ.condition) {
+       const condKey = subQ.condition.key;
+       // Conditions are checked against English data values
+       if (prev.formDataEn[condKey] !== next.formDataEn[condKey]) return true;
+    }
+
+    // 5. Recurse into deeper subquestions
+    if (subQ.subQuestions && subQ.subQuestions.length > 0) {
+      if (checkSubtreeUpdates(subQ.subQuestions, prev, next)) return true;
+    }
+  }
+  return false;
+};
+
 const QuestionBlock = ({
   qConfig,
   questionnaireData,
@@ -238,6 +277,7 @@ const arePropsEqual = (prev, next) => {
   // 1. Check strict dependencies (including i18n)
   if (prev.t !== next.t) return false; // FIX: Language change detection
   if (prev.questionnaireData !== next.questionnaireData) return false; // FIX: Data change
+  if (prev.questionnaireDataEn !== next.questionnaireDataEn) return false; // FIX: English Data change
 
   if (prev.qConfig !== next.qConfig) return false;
   if (prev.displayNumber !== next.displayNumber) return false;
@@ -248,16 +288,31 @@ const arePropsEqual = (prev, next) => {
   // 2. Check value change
   if (prev.formData[name] !== next.formData[name]) return false;
 
-  // 3. Check Q27 specifics
+  // 3. Check for auxiliary fields (like "Other" text inputs) for the CURRENT block
+  if (next.qConfig.otherOptionId) {
+      if (prev.formData[next.qConfig.otherOptionId] !== next.formData[next.qConfig.otherOptionId]) return false;
+  }
+
+  // 4. Check Q27 specifics
   if (name === 'Q27') {
     if (prev.isQ27No !== next.isQ27No) return false;
     if (prev.showQ27VideoPrompt !== next.showQ27VideoPrompt) return false;
     if (prev.q27VideoConfirmed !== next.q27VideoConfirmed) return false;
   }
 
-  // 4. Subquestions check
+  // 5. Check condition dependency for the current block (affects showSubquestions)
+  if (next.qConfig.condition) {
+      const condKey = next.qConfig.condition.key;
+      // Conditions rely on formDataEn values
+      if (prev.formDataEn[condKey] !== next.formDataEn[condKey]) return false;
+  }
+
+  // 6. Subquestions check - OPTIMIZED
   if (next.qConfig.subQuestions && next.qConfig.subQuestions.length > 0) {
-      return false;
+      // Instead of always re-rendering if subquestions exist, check if any subtree dependency actually changed
+      if (checkSubtreeUpdates(next.qConfig.subQuestions, prev, next)) {
+          return false;
+      }
   }
 
   return true;
