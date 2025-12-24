@@ -231,6 +231,32 @@ const QuestionBlock = ({
   );
 };
 
+// Helper to recursively check for changes in sub-questions
+const hasSubtreeChanged = (prev, next, questions) => {
+  if (!questions || !Array.isArray(questions)) return false;
+
+  for (const q of questions) {
+    const key = q.name || q.key;
+
+    // Check if the question's own value has changed
+    // Using optional chaining as a safeguard
+    if (prev.formData?.[key] !== next.formData?.[key]) return true;
+
+    // Check if the condition key (if any) has changed
+    // Conditions often depend on translated or English values, usually checked against formDataEn
+    if (q.condition && q.condition.key) {
+      const condKey = q.condition.key;
+      if (prev.formDataEn?.[condKey] !== next.formDataEn?.[condKey]) return true;
+    }
+
+    // Recurse
+    if (q.subQuestions && hasSubtreeChanged(prev, next, q.subQuestions)) {
+      return true;
+    }
+  }
+  return false;
+};
+
 // Custom Comparator
 const arePropsEqual = (prev, next) => {
   const name = next.qConfig.name || next.qConfig.key;
@@ -255,9 +281,13 @@ const arePropsEqual = (prev, next) => {
     if (prev.q27VideoConfirmed !== next.q27VideoConfirmed) return false;
   }
 
-  // 4. Subquestions check
+  // 4. Subquestions check - OPTIMIZED
+  // Instead of always returning false (forcing re-render), we recursively check
+  // if any sub-question's value or condition has changed.
   if (next.qConfig.subQuestions && next.qConfig.subQuestions.length > 0) {
+    if (hasSubtreeChanged(prev, next, next.qConfig.subQuestions)) {
       return false;
+    }
   }
 
   return true;
