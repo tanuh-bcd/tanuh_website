@@ -366,7 +366,7 @@ function ThankYou({ riskResult, formData, sessionId, formStructure, questionnair
       <div className="thank-you-dialog">
         {/* --- MODIFIED (but still commented out) ---
         <img src="/tanuh.png" alt={thankYouData.logos.tanuhAlt} className="logo tanuh-logo" />
-        <img src="/IISc_logo.png" alt={thankYouData.logos.iiscAlt} className="logo iisc-logo" />
+        <img src="/IISc_logo.webp" alt={thankYouData.logos.iiscAlt} className="logo iisc-logo" />
         */}
 
         <button className="close-button" onClick={() => window.location.reload()}>&times;</button>

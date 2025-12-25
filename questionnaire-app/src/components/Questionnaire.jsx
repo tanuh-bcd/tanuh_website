@@ -307,7 +307,7 @@ function Questionnaire({ onSubmit, isSubmitting, formStructure, questionnaireDat
 
       <form className="questionnaire-container" onSubmit={handleSubmit} noValidate>
         <img src="/tanuh.png" alt={t('ui.logos.tanuhAlt')} className="logo tanuh-logo" />
-        <img src="/IISc_logo.png" alt={t('ui.logos.iiscAlt')} className="logo iisc-logo" />
+        <img src="/IISc_logo.webp" alt={t('ui.logos.iiscAlt')} className="logo iisc-logo" />
         
         <div className="form-header">
           <h1>{t('ui.header.title')}</h1>
