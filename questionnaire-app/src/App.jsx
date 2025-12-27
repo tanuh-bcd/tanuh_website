@@ -1,5 +1,5 @@
 
-import React, { useState, lazy, Suspense } from 'react';
+import React, { useState, lazy, Suspense, useMemo } from 'react';
 import Consent from './components/Consent';
 import './App.css';
 // --- NEW: Import the translation hook ---
@@ -40,8 +40,11 @@ function App() {
 
   // Get the entire translated objects for the current language
   // We use the 't' function with the namespace prefix
-  const formStructure = t('questionnaire:formStructure', { returnObjects: true });
-  const questionnaireData = t('questionnaire:questions', { returnObjects: true });
+  // OPTIMIZATION: Memoize these objects to maintain referential stability.
+  // This prevents all QuestionBlock components (which are React.memo'd) from re-rendering
+  // unnecessarily when App re-renders but language hasn't changed.
+  const formStructure = useMemo(() => t('questionnaire:formStructure', { returnObjects: true }), [t]);
+  const questionnaireData = useMemo(() => t('questionnaire:questions', { returnObjects: true }), [t]);
   const questionnaireDataEn = questionnaireDataEng.questions;
   const formStructureEn = questionnaireDataEng.formStructure;
   
@@ -98,7 +101,7 @@ function App() {
         alert(t('questionnaire:ui.errors.validationAlert')); // Use translated error
         setFinalFormData(null);
       }
-    } catch (error) {
+    } catch {
       alert('Could not connect to the server to submit the form.'); // Generic error
       setFinalFormData(null);
     } finally {

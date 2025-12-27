@@ -23,7 +23,8 @@ function Questionnaire({ onSubmit, isSubmitting, formStructure, questionnaireDat
   const { t } = useTranslation('questionnaire');
   
   // NEW: Load 'ui' text from the hook
-  const ui = t('ui', { returnObjects: true });
+  // OPTIMIZATION: Memoize to avoid recreating object on every render
+  const ui = useMemo(() => t('ui', { returnObjects: true }), [t]);
 
   // State hooks
   const [formData, setFormData] = useState(() => ({
