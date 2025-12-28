@@ -231,6 +231,35 @@ const QuestionBlock = ({
   );
 };
 
+// Helper to recursively check if any data relevant to subquestions has changed
+const hasSubtreeChanged = (subQuestions, prev, next) => {
+  if (!Array.isArray(subQuestions) || subQuestions.length === 0) return false;
+
+  for (const subQ of subQuestions) {
+    const name = subQ.name || subQ.key;
+
+    // 1. Check if the answer for this sub-question changed
+    if (prev.formData[name] !== next.formData[name]) return true;
+
+    // 2. Check if validation error status changed
+    const prevError = prev.validationErrors.includes(name);
+    const nextError = next.validationErrors.includes(name);
+    if (prevError !== nextError) return true;
+
+    // 3. Check if the condition trigger changed (visibility toggle)
+    if (subQ.condition) {
+      const condKey = subQ.condition.key;
+      if (prev.formDataEn[condKey] !== next.formDataEn[condKey]) return true;
+    }
+
+    // 4. Recurse for deeper levels
+    if (subQ.subQuestions && subQ.subQuestions.length > 0) {
+      if (hasSubtreeChanged(subQ.subQuestions, prev, next)) return true;
+    }
+  }
+  return false;
+};
+
 // Custom Comparator
 const arePropsEqual = (prev, next) => {
   const name = next.qConfig.name || next.qConfig.key;
@@ -256,8 +285,12 @@ const arePropsEqual = (prev, next) => {
   }
 
   // 4. Subquestions check
+  // OPTIMIZATION: Recursively check if subquestions actually need an update.
+  // Previously this was just 'return false' which caused excessive re-renders.
   if (next.qConfig.subQuestions && next.qConfig.subQuestions.length > 0) {
+    if (hasSubtreeChanged(next.qConfig.subQuestions, prev, next)) {
       return false;
+    }
   }
 
   return true;
