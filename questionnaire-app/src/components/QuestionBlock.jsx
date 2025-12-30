@@ -231,6 +231,30 @@ const QuestionBlock = ({
   );
 };
 
+// Helper to recursively check for changes
+const hasSubtreeChanged = (prev, next, qConfig) => {
+  const key = qConfig.name || qConfig.key;
+
+  // 1. Check this question's value
+  if (prev.formData[key] !== next.formData[key]) return true;
+  if (prev.validationErrors.includes(key) !== next.validationErrors.includes(key)) return true;
+
+  // 2. Check subquestions
+  if (qConfig.subQuestions) {
+    for (const subQ of qConfig.subQuestions) {
+      // Check condition dependency (usually parent, but can be any key)
+      if (subQ.condition) {
+        const condKey = subQ.condition.key;
+        // Conditions typically use English data for logic checks
+        if (prev.formDataEn[condKey] !== next.formDataEn[condKey]) return true;
+      }
+
+      if (hasSubtreeChanged(prev, next, subQ)) return true;
+    }
+  }
+  return false;
+};
+
 // Custom Comparator
 const arePropsEqual = (prev, next) => {
   const name = next.qConfig.name || next.qConfig.key;
@@ -255,9 +279,13 @@ const arePropsEqual = (prev, next) => {
     if (prev.q27VideoConfirmed !== next.q27VideoConfirmed) return false;
   }
 
-  // 4. Subquestions check
+  // 4. Subquestions check - OPTIMIZED
   if (next.qConfig.subQuestions && next.qConfig.subQuestions.length > 0) {
+    // Only re-render if something in the subtree (values or conditions) actually changed
+    if (hasSubtreeChanged(prev, next, next.qConfig)) {
       return false;
+    }
+    return true;
   }
 
   return true;

@@ -116,12 +116,8 @@ function Questionnaire({ onSubmit, isSubmitting, formStructure, questionnaireDat
   }, [formData, formStructure, getTranslatedConditionValue]);
 
 
-  // handleChange - Refactored to avoid side effects
-  // The 'handleChange' function will be re-created on every render (no useCallback)
-  // because QuestionBlock ignores its identity anyway in arePropsEqual.
-  // This simplifies dependencies and ensures 'formData' is always fresh if needed,
-  // but we use functional updates anyway.
-  const handleChange = (e) => {
+  // handleChange - OPTIMIZED: Memoized with useCallback
+  const handleChange = useCallback((e) => {
     const { name, value, type, checked } = e.target;
     // CRITICAL FIX: Get translated "No" value for Q27
     const noValue = t('questions.Q27.answers.1'); // Assumes "No" is index 1
@@ -138,19 +134,38 @@ function Questionnaire({ onSubmit, isSubmitting, formStructure, questionnaireDat
 
     // Handle changes
     if (type === 'checkbox') {
-        const currentValues = formData[name] || [];
-        const newValues = checked ? [...currentValues, value] : currentValues.filter(v => v !== value);
+        setFormData(prev => {
+           const currentValues = prev[name] || [];
+           const newValues = checked ? [...currentValues, value] : currentValues.filter(v => v !== value);
+           return { ...prev, [name]: newValues };
+        });
 
-        // Calculate English values
+        // We need access to questionnaireData/En for mapping.
+        // Since we are in useCallback, we depend on them.
         const localAnswers = questionnaireData[name]?.answers || [];
         const englishAnswers = questionnaireDataEn[name]?.answers || [];
-        const englishMappedValues = newValues.map(
-          val => englishAnswers[localAnswers.indexOf(val)] || val
-        );
 
-        // Update both states
-        setFormData(prev => ({ ...prev, [name]: newValues }));
-        setFormDataEn(prev => ({ ...prev, [name]: englishMappedValues }));
+        setFormDataEn(prev => {
+             // We need to re-derive newValues because we can't easily access the result of setFormData
+             // But we have 'checked' and 'value'.
+             // const currentValues = prev[name] || [];
+             // actually currentValues is unused here, removing it to fix lint error.
+
+             // To be safe and consistent with previous logic:
+             // The previous logic accessed 'formData[name]' directly from closure.
+             // Inside functional update 'prev' is the reliable source.
+
+             // BUT mapping relies on the *input* value (which is local language).
+             // So we map the *input value* to English.
+             const englishValueToToggle = englishAnswers[localAnswers.indexOf(value)] || value;
+
+             const currentEnValues = prev[name] || [];
+             const newEnValues = checked
+                ? [...currentEnValues, englishValueToToggle]
+                : currentEnValues.filter(v => v !== englishValueToToggle);
+
+             return { ...prev, [name]: newEnValues };
+        });
 
     } else {
         const hindiAnswers = questionnaireData[name]?.answers || [];
@@ -160,7 +175,7 @@ function Questionnaire({ onSubmit, isSubmitting, formStructure, questionnaireDat
         setFormData(prev => ({ ...prev, [name]: value }));
         setFormDataEn(prev => ({ ...prev, [name]: englishValue }));
     }
-  };
+  }, [t, questionnaireData, questionnaireDataEn]);
 
 
   // getVisibleRequiredQuestions - Modified to use translated "Yes"
