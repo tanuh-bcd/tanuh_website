@@ -40,8 +40,15 @@ function App() {
 
   // Get the entire translated objects for the current language
   // We use the 't' function with the namespace prefix
-  const formStructure = t('questionnaire:formStructure', { returnObjects: true });
-  const questionnaireData = t('questionnaire:questions', { returnObjects: true });
+  // OPTIMIZATION: Memoize these objects to prevent them from being recreated on every render
+  const formStructure = React.useMemo(() =>
+    t('questionnaire:formStructure', { returnObjects: true }),
+    [t]
+  );
+  const questionnaireData = React.useMemo(() =>
+    t('questionnaire:questions', { returnObjects: true }),
+    [t]
+  );
   const questionnaireDataEn = questionnaireDataEng.questions;
   const formStructureEn = questionnaireDataEng.formStructure;
   
@@ -98,7 +105,7 @@ function App() {
         alert(t('questionnaire:ui.errors.validationAlert')); // Use translated error
         setFinalFormData(null);
       }
-    } catch (error) {
+    } catch {
       alert('Could not connect to the server to submit the form.'); // Generic error
       setFinalFormData(null);
     } finally {
