@@ -79,7 +79,7 @@ function ThankYou({ riskResult, formData, sessionId, formStructure, questionnair
         console.log("=== RISK SCORE (percentage input) ===", riskResult);
         console.log("=== RISK LEVEL (Translated) ===", userRiskLevel);
         console.log("=== RISK LEVEL (English) ===", userRiskLevelEn);
-    }, [score, userRiskLevel, userRiskLevelEn]);
+    }, [score, userRiskLevel, userRiskLevelEn, riskResult]);
     // const userRiskAction = score !== null ? getRiskAction(score, tThankYou) : null;
     // const userRiskActionEn = score !== null ? getRiskActionEn(score) : null;
 
@@ -120,7 +120,7 @@ function ThankYou({ riskResult, formData, sessionId, formStructure, questionnair
             y = 32;
         };
 
-        const addFooter = (pageNumber, totalPages) => {
+        const addFooter = (pageNumber) => {
             doc.setFont('helvetica', 'normal');
             doc.setFontSize(8);
             doc.setTextColor(150);
