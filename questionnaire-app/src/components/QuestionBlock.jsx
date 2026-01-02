@@ -231,6 +231,35 @@ const QuestionBlock = ({
   );
 };
 
+// Helper to recursively check if any sub-question (or its descendants) has changed
+const hasSubtreeChanged = (prev, next, subQuestions) => {
+  if (!Array.isArray(subQuestions)) return false;
+
+  for (const subQ of subQuestions) {
+    const key = subQ.name || subQ.key;
+
+    // 1. Check if this sub-question's value changed
+    if (prev.formData[key] !== next.formData[key]) return true;
+
+    // 2. Check if validation error status changed for this sub-question
+    if (prev.validationErrors.includes(key) !== next.validationErrors.includes(key)) return true;
+
+    // 3. Check if visibility condition changed
+    if (subQ.condition) {
+       const condKey = subQ.condition.key;
+       // Visibility often depends on English data (see renderSubQuestions logic)
+       if (prev.formDataEn[condKey] !== next.formDataEn[condKey]) return true;
+    }
+
+    // 4. Recurse for nested sub-questions
+    if (subQ.subQuestions && hasSubtreeChanged(prev, next, subQ.subQuestions)) {
+      return true;
+    }
+  }
+
+  return false;
+};
+
 // Custom Comparator
 const arePropsEqual = (prev, next) => {
   const name = next.qConfig.name || next.qConfig.key;
@@ -255,9 +284,13 @@ const arePropsEqual = (prev, next) => {
     if (prev.q27VideoConfirmed !== next.q27VideoConfirmed) return false;
   }
 
-  // 4. Subquestions check
+  // 4. Subquestions check - Optimized
+  // Instead of unconditionally re-rendering if subquestions exist,
+  // we check if any relevant data in the subtree has changed.
   if (next.qConfig.subQuestions && next.qConfig.subQuestions.length > 0) {
-      return false;
+      if (hasSubtreeChanged(prev, next, next.qConfig.subQuestions)) {
+        return false;
+      }
   }
 
   return true;
