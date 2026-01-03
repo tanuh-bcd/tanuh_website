@@ -241,12 +241,15 @@ const arePropsEqual = (prev, next) => {
 
   if (prev.qConfig !== next.qConfig) return false;
   if (prev.displayNumber !== next.displayNumber) return false;
-  if (prev.validationErrors.includes(name) !== next.validationErrors.includes(name)) return false;
 
   if (prev.randomPatientId !== next.randomPatientId) return false; // FIX: Q44 dependency
 
-  // 2. Check value change
+  // 2. Check value change - Optimized Recursive Check
+  // Check if current question data changed
   if (prev.formData[name] !== next.formData[name]) return false;
+
+  // Check if current question validation status changed
+  if (prev.validationErrors.includes(name) !== next.validationErrors.includes(name)) return false;
 
   // 3. Check Q27 specifics
   if (name === 'Q27') {
@@ -255,12 +258,37 @@ const arePropsEqual = (prev, next) => {
     if (prev.q27VideoConfirmed !== next.q27VideoConfirmed) return false;
   }
 
-  // 4. Subquestions check
-  if (next.qConfig.subQuestions && next.qConfig.subQuestions.length > 0) {
-      return false;
+  // 4. Recursive Subquestions check
+  // Helper to recursively check if subtree data or errors changed
+  const hasSubtreeChanged = (config) => {
+     // config might be the top-level qConfig or a subQuestion object
+     // If it has subQuestions, we must check them
+     if (!config.subQuestions || !Array.isArray(config.subQuestions)) {
+         return false;
+     }
+
+     for (const sub of config.subQuestions) {
+         const subKey = sub.name || sub.key;
+
+         // Check data for this subquestion
+         if (prev.formData[subKey] !== next.formData[subKey]) return true;
+
+         // Check validation error for this subquestion
+         const prevHasError = prev.validationErrors.includes(subKey);
+         const nextHasError = next.validationErrors.includes(subKey);
+         if (prevHasError !== nextHasError) return true;
+
+         // Recurse
+         if (hasSubtreeChanged(sub)) return true;
+     }
+     return false;
+  };
+
+  if (hasSubtreeChanged(next.qConfig)) {
+      return false; // Subtree data changed, re-render
   }
 
-  return true;
+  return true; // No relevant changes found, skip render
 };
 
 export default memo(QuestionBlock, arePropsEqual);
