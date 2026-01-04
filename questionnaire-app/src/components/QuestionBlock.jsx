@@ -231,21 +231,53 @@ const QuestionBlock = ({
   );
 };
 
+// --- OPTIMIZATION HELPERS ---
+const getRelevantKeys = (qConfig) => {
+  const valueKeys = new Set();
+  const conditionKeys = new Set();
+
+  const traverse = (currentConfig) => {
+    // Add current question's key to valueKeys (for value changes)
+    const name = currentConfig.name || currentConfig.key;
+    if (name) valueKeys.add(name);
+
+    if (currentConfig.subQuestions) {
+      currentConfig.subQuestions.forEach(subQ => {
+         // Add condition key to conditionKeys (for visibility changes)
+         // Visibility depends on formDataEn usually
+         if (subQ.condition && subQ.condition.key) {
+           conditionKeys.add(subQ.condition.key);
+         }
+         // Recurse
+         traverse(subQ);
+      });
+    }
+  };
+
+  // We start traversal from subQuestions because the main key is already checked by the main logic
+  if (qConfig.subQuestions) {
+      qConfig.subQuestions.forEach(subQ => traverse(subQ));
+  }
+
+  return { valueKeys, conditionKeys };
+}
+
+
 // Custom Comparator
 const arePropsEqual = (prev, next) => {
   const name = next.qConfig.name || next.qConfig.key;
 
   // 1. Check strict dependencies (including i18n)
-  if (prev.t !== next.t) return false; // FIX: Language change detection
-  if (prev.questionnaireData !== next.questionnaireData) return false; // FIX: Data change
+  if (prev.t !== next.t) return false; // Language change detection
+  if (prev.questionnaireData !== next.questionnaireData) return false; // Data change
 
   if (prev.qConfig !== next.qConfig) return false;
   if (prev.displayNumber !== next.displayNumber) return false;
   if (prev.validationErrors.includes(name) !== next.validationErrors.includes(name)) return false;
 
-  if (prev.randomPatientId !== next.randomPatientId) return false; // FIX: Q44 dependency
+  if (prev.randomPatientId !== next.randomPatientId) return false; // Q44 dependency
 
-  // 2. Check value change
+  // 2. Check value change (own value)
   if (prev.formData[name] !== next.formData[name]) return false;
 
   // 3. Check Q27 specifics
@@ -255,9 +287,24 @@ const arePropsEqual = (prev, next) => {
     if (prev.q27VideoConfirmed !== next.q27VideoConfirmed) return false;
   }
 
-  // 4. Subquestions check
+  // 4. Subquestions check - OPTIMIZED
+  // Instead of blindly returning false if subquestions exist, we check if any relevant dependency changed.
   if (next.qConfig.subQuestions && next.qConfig.subQuestions.length > 0) {
-      return false;
+      const { valueKeys, conditionKeys } = getRelevantKeys(next.qConfig);
+
+      // Check if any descendant value changed in formData
+      // This is crucial because if a child's value changed, the parent MUST re-render to propagate the new formData to the child.
+      for (const key of valueKeys) {
+          if (prev.formData[key] !== next.formData[key]) return false;
+          // CRITICAL FIX: Check if validation error status changed for this sub-question
+          if (prev.validationErrors.includes(key) !== next.validationErrors.includes(key)) return false;
+      }
+
+      // Check if any condition dependency changed in formDataEn
+      // This determines if any child/descendant visibility changed.
+      for (const key of conditionKeys) {
+          if (prev.formDataEn[key] !== next.formDataEn[key]) return false;
+      }
   }
 
   return true;

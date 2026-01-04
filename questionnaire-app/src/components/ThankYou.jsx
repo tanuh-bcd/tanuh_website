@@ -79,7 +79,7 @@ function ThankYou({ riskResult, formData, sessionId, formStructure, questionnair
         console.log("=== RISK SCORE (percentage input) ===", riskResult);
         console.log("=== RISK LEVEL (Translated) ===", userRiskLevel);
         console.log("=== RISK LEVEL (English) ===", userRiskLevelEn);
-    }, [score, userRiskLevel, userRiskLevelEn]);
+    }, [score, riskResult, userRiskLevel, userRiskLevelEn]); // Added riskResult
     // const userRiskAction = score !== null ? getRiskAction(score, tThankYou) : null;
     // const userRiskActionEn = score !== null ? getRiskActionEn(score) : null;
 
@@ -120,7 +120,7 @@ function ThankYou({ riskResult, formData, sessionId, formStructure, questionnair
             y = 32;
         };
 
-        const addFooter = (pageNumber, totalPages) => {
+        const addFooter = (pageNumber) => { // Removed unused totalPages
             doc.setFont('helvetica', 'normal');
             doc.setFontSize(8);
             doc.setTextColor(150);
@@ -131,8 +131,7 @@ function ThankYou({ riskResult, formData, sessionId, formStructure, questionnair
 
         const addPageWithTemplate = () => {
            const currentPage = doc.internal.getNumberOfPages();
-           const totalPagesGuess = currentPage + 1;
-           addFooter(currentPage, totalPagesGuess);
+           addFooter(currentPage); // Removed unused totalPages argument
            doc.addPage();
            addHeader();
         };
@@ -353,7 +352,7 @@ function ThankYou({ riskResult, formData, sessionId, formStructure, questionnair
         const totalPages = doc.internal.getNumberOfPages();
         for (let i = 1; i <= totalPages; i++) {
             doc.setPage(i);
-            addFooter(i, totalPages);
+            addFooter(i); // Removed unused totalPages argument
         }
 
         // --- MODIFIED ---
