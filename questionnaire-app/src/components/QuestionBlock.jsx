@@ -231,6 +231,38 @@ const QuestionBlock = ({
   );
 };
 
+// Helper: Check if any value/validation/condition in the subtree has changed
+const hasSubtreeChanged = (qConfig, prev, next) => {
+  const check = (node) => {
+    const key = node.name || node.key;
+
+    // 1. Check value change
+    if (prev.formData[key] !== next.formData[key]) return true;
+
+    // 2. Check validation error change
+    // If the error status for this field changed, we must re-render
+    if (prev.validationErrors.includes(key) !== next.validationErrors.includes(key)) return true;
+
+    // 3. Check condition dependency
+    // If this node depends on another field, check if that field changed
+    if (node.condition) {
+      const condKey = node.condition.key;
+      // Conditions rely on English data
+      if (prev.formDataEn[condKey] !== next.formDataEn[condKey]) return true;
+    }
+
+    // Recurse into subquestions
+    if (node.subQuestions && node.subQuestions.length > 0) {
+      for (const child of node.subQuestions) {
+        if (check(child)) return true;
+      }
+    }
+    return false;
+  };
+
+  return check(qConfig);
+};
+
 // Custom Comparator
 const arePropsEqual = (prev, next) => {
   const name = next.qConfig.name || next.qConfig.key;
@@ -255,9 +287,10 @@ const arePropsEqual = (prev, next) => {
     if (prev.q27VideoConfirmed !== next.q27VideoConfirmed) return false;
   }
 
-  // 4. Subquestions check
-  if (next.qConfig.subQuestions && next.qConfig.subQuestions.length > 0) {
-      return false;
+  // 4. Subquestions check - OPTIMIZED
+  // Instead of always re-rendering if subquestions exist, we check if any relevant data in the subtree changed.
+  if (hasSubtreeChanged(next.qConfig, prev, next)) {
+    return false;
   }
 
   return true;
