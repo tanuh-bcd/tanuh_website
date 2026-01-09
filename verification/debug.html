@@ -1,0 +1,927 @@
+<!DOCTYPE html><html lang="en"><head>
+    <script type="module">import { injectIntoGlobalHook } from "/@react-refresh";
+injectIntoGlobalHook(window);
+window.$RefreshReg$ = () => {};
+window.$RefreshSig$ = () => (type) => type;</script>
+
+    <script type="module" src="/@vite/client"></script>
+
+    <meta charset="UTF-8">
+    <!-- <link rel="icon" type="image/svg+xml" href="/vite.svg" /> -->
+    <!-- <link rel="icon" type="image/avif" href="/Tanuh_logo.avif" /> -->
+    <link rel="icon" type="image/png" href="/TANUH.png">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>questionnaire-app</title>
+  <style type="text/css" data-vite-dev-id="/app/questionnaire-app/src/components/Consent.css">/*
+
+.consent-container {
+  background: #ffffff;
+  border-radius: 16px;
+  box-shadow: 0 12px 50px -10px rgba(98, 0, 238, 0.15);
+  padding: 40px 50px;
+  max-width: 800px;
+  width: 100%;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  border-top: 6px solid #6200EE;
+  animation: fadeIn 0.5s ease-out;
+}
+
+.consent-container h2 {
+  color: #212529;
+  font-size: 2rem;
+  font-weight: 700;
+  margin-top: 0;
+  margin-bottom: 20px;
+  border-bottom: 1px solid #e9ecef;
+  padding-bottom: 15px;
+}
+
+.consent-container h3 {
+  color: #495057;
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-top: 30px;
+  margin-bottom: 15px;
+  border-left: 4px solid #6200EE;
+  padding-left: 15px;
+}
+
+.consent-container p {
+  color: #6c757d;
+  line-height: 1.7;
+  font-size: 1rem;
+}
+
+.consent-checkbox {
+  margin-top: 40px;
+  display: flex;
+  align-items: center;
+  background-color: #f8f7fa;
+  padding: 15px 20px;
+  border-radius: 8px;
+  border: 1px solid #e9ecef;
+}
+
+.consent-checkbox input {
+  margin-right: 12px;
+  width: 20px;
+  height: 20px;
+  accent-color: #6200EE;
+  cursor: pointer;
+}
+
+.consent-checkbox label {
+  font-weight: 500;
+  color: #495057;
+  cursor: pointer;
+}
+
+.consent-container button {
+  width: 100%;
+  padding: 16px;
+  margin-top: 30px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: white;
+  background-color: #6200EE;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+  box-shadow: 0 4px 15px rgba(98, 0, 238, 0.2);
+}
+
+.consent-container button:hover:not(:disabled) {
+  background-color: #5a00d1;
+  transform: translateY(-3px);
+  box-shadow: 0 7px 25px rgba(98, 0, 238, 0.3);
+
+
+}
+
+.consent-container button:disabled {
+  background-color: #efe3fa;
+  color: #adb5bd;
+  cursor: not-allowed;
+  box-shadow: none;
+  transform: translateY(0);
+  color: rgb(202, 120, 240);
+
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+} */
+
+
+
+.consent-container {
+  background: #ffffff;
+  border-radius: 16px;
+  box-shadow: 0 12px 50px -10px rgba(98, 0, 238, 0.15);
+  padding: 40px 50px;
+  max-width: 800px;
+  width: 100%;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  border-top: 6px solid #6200EE;
+  animation: fadeIn 0.5s ease-out;
+}
+
+/* --- Consistent & Professional Typography --- */
+.consent-container h2 {
+  color: #212529;
+  font-size: 2rem;
+  font-weight: 700;
+  margin-top: 0;
+  margin-bottom: 20px;
+  border-bottom: 1px solid #e9ecef;
+  padding-bottom: 15px;
+}
+
+.consent-container h3 {
+  color: #495057;
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-top: 0;
+  margin-bottom: 15px;
+  border-left: 4px solid #6200EE;
+  padding-left: 15px;
+}
+
+.consent-container p {
+  color: #6c757d;
+  line-height: 1.7;
+  font-size: 1rem;
+  margin-bottom: 10px;
+}
+
+/* NEW: Style for the study information header */
+.consent-header {
+  background-color: #f8f7fa;
+  padding: 15px 20px;
+  border-radius: 8px;
+  border: 1px solid #e9ecef;
+  margin-bottom: 30px;
+}
+
+.consent-header p {
+  margin: 5px 0;
+  font-size: 0.9rem;
+}
+
+.consent-header strong {
+  color: #495057;
+}
+
+/* NEW: Spacing for each numbered section */
+.consent-section {
+  margin-top: 30px;
+}
+
+/* NEW: Style for paragraphs with bolded sub-headings */
+.sub-point strong {
+  color: #495057;
+}
+
+/* NEW: Highlighted box for important notices */
+.important-notice {
+  margin-top: 30px;
+  background-color: #fff9e6; /* Soft yellow for attention */
+  border-left: 4px solid #ffc107; /* Amber color */
+  padding: 20px;
+  border-radius: 8px;
+}
+
+.important-notice h3 {
+  border-left: none;
+  padding-left: 0;
+  color: #856404; /* Darker yellow/brown text */
+}
+
+/* --- Redesigned & Highlighted Checkbox Area --- */
+.consent-checkbox {
+  margin-top: 40px;
+  display: flex;
+  align-items: center;
+  background-color: #f8f7fa;
+  padding: 15px 20px;
+  border-radius: 8px;
+  border: 1px solid #e9ecef;
+}
+
+.consent-checkbox input {
+  margin-right: 12px;
+  width: 20px;
+  height: 20px;
+  accent-color: #6200EE;
+  cursor: pointer;
+}
+
+.consent-checkbox label {
+  font-weight: 500;
+  color: #495057;
+  cursor: pointer;
+}
+
+/* --- Redesigned Button with Enhanced Hover Elevation --- */
+.consent-container button {
+  width: 100%;
+  padding: 16px;
+  margin-top: 30px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: white;
+  background-color: #6200EE;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+  box-shadow: 0 4px 15px rgba(98, 0, 238, 0.2);
+}
+
+.consent-container button:hover:not(:disabled) {
+  background-color: #5a00d1;
+  transform: translateY(-3px);
+  box-shadow: 0 7px 25px rgba(98, 0, 238, 0.3);
+}
+
+.consent-container button:disabled {
+  background-color: #e9ecef;
+  color: #adb5bd;
+  cursor: not-allowed;
+  box-shadow: none;
+  transform: translateY(0);
+}
+
+/* --- Keyframe for fade-in animation --- */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+
+
+
+
+/* --- Logo Styles (Add to each CSS file) --- */
+/* --- Logo Styles --- */
+
+ .consent-container,
+.questionnaire-container,
+.thank-you-dialog {
+  position: relative;
+  padding-top: 140px;
+}
+
+.consent-container .logo {
+  position: absolute;
+  top: 20px;
+  height: 80px !important;    /* Increased base height with stronger specificity */
+  width: auto;
+}
+
+.consent-container .tanuh-logo {
+  left: 30px;
+}
+
+.consent-container .iisc-logo {
+  right: 30px;
+  background-color: transparent; /* Removed background */
+  padding: 0;                /* Removed padding */
+  border-radius: 0;          /* Removed border-radius */
+  height: 100px !important;              /* Match increased height with stronger specificity */
+  top: 20px;                 /* Matched top to .logo */
+  /* filter: invert(100%);    */
+}</style><style type="text/css" data-vite-dev-id="/app/questionnaire-app/src/components/LanguageSwitcher.css">.language-switcher {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 20px; /* Space below the switcher */
+  padding: 8px 12px;
+  background-color: #f8f0ff; /* Light purple background */
+  border-radius: 8px;
+  border: 1px solid #e0cffc;
+}
+
+.language-switcher label {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #495057;
+}
+
+.language-switcher select {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #6200EE; /* Theme color */
+  background-color: transparent;
+  border: none;
+  border-radius: 4px;
+  padding: 4px;
+  cursor: pointer;
+}
+
+.language-switcher select:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(98, 0, 238, 0.2);
+}
+</style><style type="text/css" data-vite-dev-id="/app/questionnaire-app/src/App.css">/* src/App.css */
+.app-container {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start; /* Align to the top */
+  min-height: 100vh;
+  padding: 40px 20px;
+}
+</style><style type="text/css" data-vite-dev-id="/app/questionnaire-app/src/index.css">/* src/index.css */
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+
+  /* A subtle, professional lavender gradient for the entire page background */
+  background: linear-gradient(170deg, #f7f5ff 0%, #ede9ff 100%);
+  min-height: 100vh;
+}
+
+* {
+  box-sizing: border-box;
+}</style><style type="text/css" data-vite-dev-id="/app/questionnaire-app/src/components/Questionnaire.css">/*
+
+
+
+.questionnaire-container {
+  background-color: #ffffff;
+  border-radius: 16px;
+  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.08);
+  padding: 30px 40px 40px;
+  max-width: 800px;
+  width: 100%;
+  border-top: 6px solid #6200EE;
+
+}
+
+.form-header {
+  text-align: center;
+  margin-bottom: 40px;
+  border-bottom: 1px solid #dee2e6;
+  padding-bottom: 25px;
+
+}
+
+.form-header h1 {
+  font-size: 2.2rem;
+  color: #000000;
+}
+
+.form-header p {
+  font-size: 1rem;
+  color: #6c757d;
+}
+
+.form-section {
+  padding-top: 25px;
+  margin-top: 25px;
+}
+
+.form-section h2 {
+  font-size: 1.5rem;
+  color: #6200EE;
+  margin-bottom: 30px;
+  padding-bottom: 10px;
+  border-bottom: 2px solid #f0e6ff;
+}
+
+.question-block {
+  margin-bottom: 35px;
+}
+
+.question-block > label {
+  display: block;
+  font-weight: 600;
+  color: #495057;
+  margin-bottom: 12px;
+  font-size: 1.05rem;
+}
+
+.text-input, .select-input {
+  width: 100%;
+  padding: 14px 16px;
+  border: 1px solid #ced4da;
+  border-radius: 8px;
+  font-size: 1rem;
+  background-color: #F8F9FA;
+  color: #495057;
+  transition: all 0.2s ease-in-out;
+}
+
+.text-input:focus, .select-input:focus {
+  outline: none;
+  border-color: #6200EE;
+  background-color: #ffffff;
+  box-shadow: 0 0 0 3px rgba(98, 0, 238, 0.15);
+}
+
+.inline-inputs {
+  display: flex;
+  gap: 20px;
+}
+
+.radio-group label, .checkbox-group label {
+  display: flex;
+  align-items: center;
+  padding: 10px;
+  border-radius: 8px;
+  transition: background-color 0.2s;
+  cursor: pointer;
+}
+
+.radio-group label:hover, .checkbox-group label:hover {
+  background-color: #f8f0ff;
+}
+
+.radio-group.vertical, .checkbox-group.vertical {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.radio-group input, .checkbox-group input {
+  margin-right: 12px;
+  accent-color: #6200EE;
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+}
+
+.sub-question-container {
+  background-color: #f8f9fa;
+  border-left: 4px solid #b392d8;
+  padding: 0 25px;
+  margin-top: 20px;
+  border-radius: 0 8px 8px 0;
+  max-height: 0;
+  opacity: 0;
+  overflow: hidden;
+  transition: max-height 0.6s ease-in-out, opacity 0.6s ease-in-out, padding 0.6s ease-in-out;
+}
+
+.sub-question-container.visible {
+  max-height: 1500px;
+  opacity: 1;
+  padding: 25px;
+}
+
+
+.required-asterisk {
+  color: #e63946;
+  font-weight: bold;
+  margin-left: 4px;
+}
+
+.question-block.error > label {
+  color: #e63946;
+}
+
+.question-block.error .text-input,
+.question-block.error .select-input {
+  border-color: #e63946;
+  background-color: #fff0f1;
+}
+
+.youtube-player-container {
+    margin-top: 20px;
+    margin-bottom: 25px;
+    position: relative;
+    padding-bottom: 56.25%;
+    height: 0;
+    overflow: hidden;
+    max-width: 100%;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+
+.youtube-player-container iframe {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+}
+
+.submit-button.loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: not-allowed;
+  opacity: 0.9;
+}
+
+.loading-dots {
+  display: inline-block;
+  margin-right: 10px;
+}
+
+.loading-dots span {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: white;
+  animation: bounce-dots 1.4s infinite ease-in-out both;
+}
+
+.loading-dots span:nth-child(1) {
+  animation-delay: -0.32s;
+}
+
+.loading-dots span:nth-child(2) {
+  animation-delay: -0.16s;
+}
+
+@keyframes bounce-dots {
+  0%, 80%, 100% {
+    transform: scale(0);
+  }
+  40% {
+    transform: scale(1.0);
+  }
+}
+
+
+.submit-button {
+  width: 100%;
+  padding: 16px;
+  margin-top: 20px;
+  font-size: 1.1rem;
+  font-weight: bold;
+  color: white;
+  background: linear-gradient(45deg, #6200EE, #7e3ff2);
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+  box-shadow: 0 4px 20px rgba(98, 0, 238, 0.25);
+}
+
+.submit-button:hover:not(:disabled) {
+  transform: translateY(-3px);
+  box-shadow: 0 7px 25px rgba(98, 0, 238, 0.35);
+}
+
+.checkbox-group.vertical .text-input {
+  width: 50%;
+  margin-top: 8px;
+}
+*/
+
+
+.questionnaire-container {
+  background-color: #ffffff;
+  border-radius: 16px;
+  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.08);
+  padding: 30px 40px 40px;
+  max-width: 800px;
+  width: 100%;
+  border-top: 6px solid #6200EE;
+  /* NEW: Add margin to prevent overlap with fixed progress bar */
+  margin-top: 70px; /* Adjust if progress bar height changes */
+}
+
+.form-header {
+  text-align: center;
+  margin-bottom: 40px;
+  border-bottom: 1px solid #dee2e6;
+  padding-bottom: 25px;
+}
+
+.form-header h1 {
+  font-size: 2.2rem;
+  color: #000000;
+}
+
+.form-header p {
+  font-size: 1rem;
+  color: #6c757d;
+}
+
+.form-section {
+  padding-top: 25px;
+  margin-top: 25px;
+}
+
+.form-section h2 {
+  font-size: 1.5rem;
+  color: #6200EE; /* Purple for section titles */
+  margin-bottom: 30px;
+  padding-bottom: 10px;
+  border-bottom: 2px solid #f0e6ff; /* Light lavender underline */
+}
+
+.question-block {
+  margin-bottom: 35px;
+}
+
+.question-block > label {
+  display: block;
+  font-weight: 600;
+  color: #495057;
+  margin-bottom: 12px;
+  font-size: 1.05rem;
+}
+
+.text-input, .select-input {
+  width: 100%;
+  padding: 14px 16px;
+  border: 1px solid #ced4da;
+  border-radius: 8px;
+  font-size: 1rem;
+  background-color: #F8F9FA;
+  color: #495057;
+  transition: all 0.2s ease-in-out;
+}
+
+.text-input:focus, .select-input:focus {
+  outline: none;
+  border-color: #6200EE;
+  background-color: #ffffff;
+  box-shadow: 0 0 0 3px rgba(98, 0, 238, 0.15);
+}
+
+.inline-inputs {
+  display: flex;
+  gap: 20px;
+}
+
+.radio-group label, .checkbox-group label {
+  display: flex;
+  align-items: center;
+  padding: 10px;
+  border-radius: 8px;
+  transition: background-color 0.2s;
+  cursor: pointer;
+}
+
+.radio-group label:hover, .checkbox-group label:hover {
+  background-color: #f8f0ff;
+}
+
+.radio-group.vertical, .checkbox-group.vertical {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.radio-group input, .checkbox-group input {
+  margin-right: 12px;
+  accent-color: #6200EE;
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+}
+
+.sub-question-container {
+  background-color: #f8f9fa;
+  border-left: 4px solid #b392d8;
+  padding: 0 25px;
+  margin-top: 20px;
+  border-radius: 0 8px 8px 0;
+  max-height: 0;
+  opacity: 0;
+  overflow: hidden;
+  transition: max-height 0.6s ease-in-out, opacity 0.6s ease-in-out, padding 0.6s ease-in-out;
+}
+
+.sub-question-container.visible {
+  max-height: 1500px;
+  opacity: 1;
+  padding: 25px;
+}
+
+.required-asterisk {
+  color: #e63946;
+  font-weight: bold;
+  margin-left: 4px;
+}
+
+.question-block.error > label {
+  color: #e63946;
+}
+
+.question-block.error .text-input,
+.question-block.error .select-input {
+  border-color: #e63946;
+  background-color: #fff0f1;
+}
+
+.youtube-player-container {
+    margin-top: 20px;
+    margin-bottom: 25px;
+    position: relative;
+    padding-bottom: 56.25%;
+    height: 0;
+    overflow: hidden;
+    max-width: 100%;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+
+.youtube-player-container iframe {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+}
+
+.submit-button.loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: not-allowed;
+  opacity: 0.9;
+}
+
+.loading-dots {
+  display: inline-block;
+  margin-right: 10px;
+}
+
+.loading-dots span {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: white;
+  animation: bounce-dots 1.4s infinite ease-in-out both;
+}
+
+.loading-dots span:nth-child(1) {
+  animation-delay: -0.32s;
+}
+
+.loading-dots span:nth-child(2) {
+  animation-delay: -0.16s;
+}
+
+@keyframes bounce-dots {
+  0%, 80%, 100% {
+    transform: scale(0);
+  }
+  40% {
+    transform: scale(1.0);
+  }
+}
+
+.submit-button {
+  width: 100%;
+  padding: 16px;
+  margin-top: 20px;
+  font-size: 1.1rem;
+  font-weight: bold;
+  color: white;
+  background: linear-gradient(45deg, #6200EE, #7e3ff2);
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+  box-shadow: 0 4px 20px rgba(98, 0, 238, 0.25);
+}
+
+.submit-button:hover:not(:disabled) {
+  transform: translateY(-3px);
+  box-shadow: 0 7px 25px rgba(98, 0, 238, 0.35);
+}
+
+.checkbox-group.vertical .text-input {
+  width: 100%; /* Corrected width */
+  margin-top: 8px;
+}
+
+/* Ensure submit button container doesn't cause extra space */
+.submit-button-container {
+    margin-top: 30px; /* Add some space above the button */
+}
+
+/* --- NEW: Styles for Fixed Progress Bar --- */
+.progress-bar-container {
+  position: fixed; /* Keep it at the top */
+  top: 0;
+  left: 0;
+  width: 100%;
+  background-color: #ffffff; /* Use white background to match header */
+  padding: 10px 20px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  z-index: 100; /* Ensure it's above other content */
+  box-sizing: border-box; /* Include padding in width */
+  border-bottom: 1px solid #dee2e6; /* Add subtle bottom border */
+}
+
+.progress-bar-label {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #495057;
+  margin-bottom: 5px;
+  text-align: center;
+}
+
+.progress-bar-track {
+  width: 100%;
+  height: 10px;
+  background-color: #e9ecef; /* Light gray track */
+  border-radius: 5px;
+  overflow: hidden; /* Ensure fill stays within rounded corners */
+}
+
+.progress-bar-fill {
+  height: 100%;
+  background-color: #6200EE; /* Purple theme color */
+  border-radius: 5px;
+  transition: width 0.4s ease-in-out; /* Smooth animation */
+  width: 0%; /* Initial width */
+}
+
+
+/* --- Styles for Video Prompt --- */
+.video-prompt-container {
+  background-color: #f8f0ff; /* Light lavender background */
+  border-left: 4px solid #6200EE; /* Purple accent */
+  padding: 15px 20px;
+  margin-top: 15px;
+  margin-bottom: 25px; /* Add margin below */
+  border-radius: 0 8px 8px 0;
+  display: flex;
+  flex-direction: column; /* Stack text and button */
+  align-items: flex-start; /* Align items to the left */
+}
+
+.video-prompt-note {
+  font-size: 0.95rem;
+  color: #495057;
+  line-height: 1.6;
+  margin: 0 0 15px 0; /* Space below the text */
+}
+
+.video-prompt-button {
+  padding: 8px 25px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: white;
+  background-color: #6200EE;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.video-prompt-button:hover {
+  background-color: #5a00d1;
+}
+
+
+.field-error {
+  color: #d93025;
+  font-size: 0.9rem;
+  margin-top: 6px;
+}
+
+
+/* --- Logo Styles --- */
+
+.consent-container,
+.questionnaire-container,
+.thank-you-dialog {
+  position: relative;
+  padding-top: 140px;
+}
+
+.questionnaire-container .logo {
+  position: absolute;
+  top: 20px;
+  height: 80px !important;    /* Increased base height with stronger specificity */
+  width: auto;
+}
+
+.questionnaire-container .tanuh-logo {
+  left: 30px;
+}
+
+.questionnaire-container .iisc-logo {
+  right: 30px;
+  background-color: transparent; /* Removed background */
+  padding: 0;                /* Removed padding */
+  border-radius: 0;          /* Removed border-radius */
+  height: 100px !important;              /* Match increased height with stronger specificity */
+  top: 20px;                 /* Matched top to .logo */
+  /* filter: invert(100%);     */
+}</style></head>
+  <body>
+    <div id="root"><div class="app-container"><div class="progress-bar-container"><div class="progress-bar-label">Progress: 9%</div><div class="progress-bar-track"><div class="progress-bar-fill" style="width: 9%;"></div></div></div><form class="questionnaire-container" novalidate=""><img alt="TANUH Logo" class="logo tanuh-logo" src="/tanuh.png"><img alt="IISC Logo" class="logo iisc-logo" src="/IISc_logo.png"><div class="form-header"><h1>Breast Cancer Risk Questionnaire</h1><p style="color: rgb(83, 59, 66); font-size: 18px; margin-top: 8px;">Please answer the following questions to the best of your ability.</p><p style="color: rgb(83, 59, 66); font-size: 15px; margin-top: 8px;">Fields marked with <span style="color: rgb(217, 48, 37); font-weight: 600;">*</span> are mandatory.</p></div><div class="form-section"><h2>Section 1: General Information</h2> <div class="question-block "><label>1. Enter your Patient ID(if any, else leave):</label><input placeholder="DBzPVfCt" class="text-input" type="text" value="DBzPVfCt" name="Q44" style=""></div><div class="question-block "><label>2. Enter the Hospital ID(If any, else leave):</label><input placeholder="Universal" class="text-input" type="text" value="Universal" name="Q45" style=""></div><div class="question-block "><label>3. What is your Gender?<span class="required-asterisk">*</span></label><div class="radio-group vertical"><label><input type="radio" value="Female" name="Q47" style=""> Female</label><label><input type="radio" value="Male" name="Q47" style=""> Male</label><label><input type="radio" value="Other" name="Q47" style=""> Other</label></div></div><div class="question-block "><label>4. What is your current age? (Please enter a number - years)<span class="required-asterisk">*</span></label><input placeholder="e.g., 35" class="text-input" min="18" max="120" step="1" type="number" value="" name="Q1" style=""></div><div class="question-block "><label>5. What is your current height in cms?<span class="required-asterisk">*</span></label><input placeholder="e.g., 165" class="text-input" min="100" max="300" step="1" type="number" value="" name="Q2" style=""></div><div class="question-block "><label>6. What is your current Weight in kgs?<span class="required-asterisk">*</span></label><input placeholder="e.g., 60" class="text-input" min="30" max="500" step="0.1" type="number" value="" name="Q3" style=""></div><div class="question-block "><label>7. Which state or union territory best represents the place where you have lived for a significant part of your life?<span class="required-asterisk">*</span></label><select name="Q4" class="select-input"><option value="" disabled="">Select an option</option><option value="Andhra Pradesh">Andhra Pradesh</option><option value="Arunachal Pradesh">Arunachal Pradesh</option><option value="Assam">Assam</option><option value="Bihar">Bihar</option><option value="Chhattisgarh">Chhattisgarh</option><option value="Goa">Goa</option><option value="Gujarat">Gujarat</option><option value="Haryana">Haryana</option><option value="Himachal Pradesh">Himachal Pradesh</option><option value="Jharkhand">Jharkhand</option><option value="Karnataka">Karnataka</option><option value="Kerala">Kerala</option><option value="Madhya Pradesh">Madhya Pradesh</option><option value="Maharashtra">Maharashtra</option><option value="Manipur">Manipur</option><option value="Meghalaya">Meghalaya</option><option value="Mizoram">Mizoram</option><option value="Nagaland">Nagaland</option><option value="Odisha">Odisha</option><option value="Punjab">Punjab</option><option value="Rajasthan">Rajasthan</option><option value="Sikkim">Sikkim</option><option value="Tamil Nadu">Tamil Nadu</option><option value="Telangana">Telangana</option><option value="Tripura">Tripura</option><option value="Uttar Pradesh">Uttar Pradesh</option><option value="Uttarakhand">Uttarakhand</option><option value="West Bengal">West Bengal</option><option value="Andaman and Nicobar Islands">Andaman and Nicobar Islands</option><option value="Chandigarh">Chandigarh</option><option value="Dadra and Nagar Haveli and Daman and Diu">Dadra and Nagar Haveli and Daman and Diu</option><option value="Delhi">Delhi</option><option value="Jammu and Kashmir">Jammu and Kashmir</option><option value="Ladakh">Ladakh</option><option value="Lakshadweep">Lakshadweep</option><option value="Puducherry">Puducherry</option></select></div><div class="question-block "><label>8. What is your approximate annual household income?<span class="required-asterisk">*</span></label><div class="radio-group vertical"><label><input type="radio" value="Less than ₹2,00,000 per annum" name="Q5" style=""> Less than ₹2,00,000 per annum</label><label><input type="radio" value="Between ₹2,00,000 and ₹5,00,000 per annum" name="Q5" style=""> Between ₹2,00,000 and ₹5,00,000 per annum</label><label><input type="radio" value="Between ₹5,00,000 and ₹10,00,000 per annum" name="Q5" style=""> Between ₹5,00,000 and ₹10,00,000 per annum</label><label><input type="radio" value="Greater than ₹10,00,000 per annum" name="Q5" style=""> Greater than ₹10,00,000 per annum</label></div></div><div class="question-block "><label>9. What is the highest level of education you have completed?<span class="required-asterisk">*</span></label><div class="radio-group vertical"><label><input type="radio" value="No formal education" name="Q6" style=""> No formal education</label><label><input type="radio" value="Up to Class 9(Primary/Middle)" name="Q6" style=""> Up to Class 9(Primary/Middle)</label><label><input type="radio" value="Class 10 or 12(Secondary/Higher Secondary)" name="Q6" style=""> Class 10 or 12(Secondary/Higher Secondary)</label><label><input type="radio" value="Graduation &amp; Above" name="Q6" style=""> Graduation &amp; Above</label></div></div><div class="question-block "><label>10. Have you been diagnosed with diabetes?<span class="required-asterisk">*</span></label><div class="radio-group vertical"><label><input type="radio" value="Yes" name="Q7" style=""> Yes</label><label><input type="radio" value="No" name="Q7" style=""> No</label><label><input type="radio" value="I don't know" name="Q7" style=""> I don't know</label></div></div><div class="question-block "><label>11. Have you been diagnosed with high blood pressure (hypertension)?<span class="required-asterisk">*</span></label><div class="radio-group vertical"><label><input type="radio" value="Yes" name="Q8" style=""> Yes</label><label><input type="radio" value="No" name="Q8" style=""> No</label><label><input type="radio" value="I don't know" name="Q8" style=""> I don't know</label></div></div><div class="question-block "><label>12. Have you had a menstrual period?<span class="required-asterisk">*</span></label><div class="radio-group vertical"><label><input type="radio" value="Yes" name="Q9" style=""> Yes</label><label><input type="radio" value="No" name="Q9" style=""> No</label><label><input type="radio" value="I don't know" name="Q9" style=""> I don't know</label></div></div><div class="question-block "><label>13. What is your Marital Status?</label><div class="radio-group vertical"><label><input type="radio" value="Married" name="Q13" style=""> Married</label><label><input type="radio" value="Never Married" name="Q13" style=""> Never Married</label></div></div><div class="question-block "><label>14. Have you given birth to one or more children?<span class="required-asterisk">*</span></label><div class="radio-group vertical"><label><input type="radio" value="Yes" name="Q14" style=""> Yes</label><label><input type="radio" value="No" name="Q14" style=""> No</label></div></div><div class="question-block "><label>15. Have you smoked cigarettes, bidis, or used any other form of tobacco (e.g., chewing tobacco)?<span class="required-asterisk">*</span></label><div class="radio-group vertical"><label><input type="radio" value="Yes" name="Q18" style=""> Yes</label><label><input type="radio" value="No" name="Q18" style=""> No</label><label><input type="radio" value="I do not wish to answer" name="Q18" style=""> I do not wish to answer</label></div></div><div class="question-block "><label>16. Do you consume alcohol?<span class="required-asterisk">*</span></label><div class="radio-group vertical"><label><input type="radio" value="Yes" name="Q19" style=""> Yes</label><label><input type="radio" value="No" name="Q19" style=""> No</label><label><input type="radio" value="I do not wish to answer" name="Q19" style=""> I do not wish to answer</label></div></div><div class="question-block "><label>17. Have any relatives been diagnosed with any type of cancer?</label><div class="radio-group vertical"><label><input type="radio" value="Yes" name="Q20" style=""> Yes</label><label><input type="radio" value="No" name="Q20" style=""> No</label><label><input type="radio" value="I don't know" name="Q20" style=""> I don't know</label></div></div></div><div class="form-section"><h2>Section 2: Breast Examination (BE)</h2> <div class="question-block "><label>18. Have you ever undergone a Breast Examination (BE)?</label><div class="radio-group vertical"><label><input type="radio" value="Yes" name="Q27" style=""> Yes</label><label><input type="radio" value="No" name="Q27" style=""> No</label></div></div><div class="question-block "><label>19. During BE, was any lump or mass detected in your breast?</label><div class="radio-group vertical"><label><input type="radio" value="Yes" name="Q30" style=""> Yes</label><label><input type="radio" value="No" name="Q30" style=""> No</label></div></div><div class="question-block "><label>20. Did you experience breast pain or tenderness during examination?</label><div class="radio-group vertical"><label><input type="radio" value="Yes" name="Q34" style=""> Yes</label><label><input type="radio" value="No" name="Q34" style=""> No</label></div></div></div><div class="form-section"><h2>Section 3: Beyond BE</h2> <div class="question-block "><label>21. Have you undergone a mammogram?</label><div class="radio-group vertical"><label><input type="radio" value="Yes" name="Q38" style=""> Yes</label><label><input type="radio" value="No" name="Q38" style=""> No</label></div></div><div class="question-block "><label>22. Have you had a breast biopsy?<span class="required-asterisk">*</span></label><div class="radio-group vertical"><label><input type="radio" value="Yes" name="Q40" style=""> Yes</label><label><input type="radio" value="No" name="Q40" style=""> No</label></div></div><div class="question-block "><label>23. Have you ever been diagnosed with any type of cancer?<span class="required-asterisk">*</span></label><div class="radio-group vertical"><label><input type="radio" value="Yes" name="Q42" style=""> Yes</label><label><input type="radio" value="No" name="Q42" style=""> No</label></div></div></div><div class="submit-button-container"><button type="submit" class="submit-button">Submit Questionnaire</button></div></form></div></div>
+    <script type="module" src="/src/main.jsx"></script>
+
+
+</body></html>
