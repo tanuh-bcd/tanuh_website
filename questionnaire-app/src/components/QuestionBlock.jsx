@@ -255,9 +255,44 @@ const arePropsEqual = (prev, next) => {
     if (prev.q27VideoConfirmed !== next.q27VideoConfirmed) return false;
   }
 
-  // 4. Subquestions check
+  // 4. Subquestions check - Optimized
   if (next.qConfig.subQuestions && next.qConfig.subQuestions.length > 0) {
-      return false;
+      // Check if condition for subquestions visibility changed
+      if (next.qConfig.condition) {
+          const condKey = next.qConfig.condition.key;
+          if (prev.formData[condKey] !== next.formData[condKey]) return false;
+
+          // Also check English data if relevant for logic
+          if (prev.formDataEn && next.formDataEn && prev.formDataEn[condKey] !== next.formDataEn[condKey]) return false;
+      }
+
+      // Recursive helper to check if any subquestion data changed
+      const hasSubtreeChanged = (subQuestions) => {
+          for (const subQ of subQuestions) {
+              const subKey = subQ.name || subQ.key;
+
+              // Check value change
+              if (prev.formData[subKey] !== next.formData[subKey]) return true;
+
+              // Check validation error status change
+              if (prev.validationErrors.includes(subKey) !== next.validationErrors.includes(subKey)) return true;
+
+              // Check sub-condition change (if nested deeper)
+              if (subQ.condition) {
+                  const subCondKey = subQ.condition.key;
+                  if (prev.formData[subCondKey] !== next.formData[subCondKey]) return true;
+              }
+
+              if (subQ.subQuestions) {
+                  if (hasSubtreeChanged(subQ.subQuestions)) return true;
+              }
+          }
+          return false;
+      };
+
+      if (hasSubtreeChanged(next.qConfig.subQuestions)) {
+          return false;
+      }
   }
 
   return true;
