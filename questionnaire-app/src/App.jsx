@@ -36,18 +36,19 @@ function App() {
 
   // --- MODIFIED: Load translations and get the 'ready' flag ---
   // We specify all namespaces here to ensure they are loaded
-  const { t, ready } = useTranslation(['consent', 'questionnaire', 'thankyou']);
+  const { t, ready, i18n } = useTranslation(['consent', 'questionnaire', 'thankyou']);
 
   // Get the entire translated objects for the current language
   // We use the 't' function with the namespace prefix
-  const formStructure = t('questionnaire:formStructure', { returnObjects: true });
-  const questionnaireData = t('questionnaire:questions', { returnObjects: true });
+  // Memoized to ensure referential stability for child components (Questionnaire)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const formStructure = React.useMemo(() => t('questionnaire:formStructure', { returnObjects: true }), [t, i18n.language]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const questionnaireData = React.useMemo(() => t('questionnaire:questions', { returnObjects: true }), [t, i18n.language]);
   const questionnaireDataEn = questionnaireDataEng.questions;
   const formStructureEn = questionnaireDataEng.formStructure;
   
   // --- END MODIFICATION ---
-
-  const { i18n } = useTranslation();
 
 
   const handleConsent = async () => {
