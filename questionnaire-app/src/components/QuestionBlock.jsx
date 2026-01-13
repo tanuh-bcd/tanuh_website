@@ -1,5 +1,37 @@
 import React, { memo } from 'react';
 
+// Helper to check if any question in the subtree has changed.
+// This allows us to skip re-rendering parent questions even if they have sub-questions,
+// as long as the sub-questions themselves haven't changed.
+const hasSubtreeChanged = (prev, next, questions) => {
+  if (!questions) return false;
+
+  for (const q of questions) {
+      const key = q.name || q.key;
+
+      // 1. Check direct value change
+      if (prev.formData[key] !== next.formData[key]) return true;
+
+      // 2. Check validation error status
+      const prevHasError = prev.validationErrors.includes(key);
+      const nextHasError = next.validationErrors.includes(key);
+      if (prevHasError !== nextHasError) return true;
+
+      // 3. Check condition dependency
+      if (q.condition) {
+           const condKey = q.condition.key;
+           // Check English data for condition as that's what's used in logic
+           if (prev.formDataEn[condKey] !== next.formDataEn[condKey]) return true;
+      }
+
+      // 4. Recurse
+      if (q.subQuestions && hasSubtreeChanged(prev, next, q.subQuestions)) {
+          return true;
+      }
+  }
+  return false;
+};
+
 // Optimization: Extracted this component to apply React.memo.
 // The Questionnaire component renders many of these blocks.
 // Memoization prevents re-rendering all questions when typing in a single field,
@@ -257,7 +289,11 @@ const arePropsEqual = (prev, next) => {
 
   // 4. Subquestions check
   if (next.qConfig.subQuestions && next.qConfig.subQuestions.length > 0) {
-      return false;
+      // OPTIMIZED: Only re-render if the subtree actually changed.
+      // Previously this was 'return false', causing O(N) re-renders for parents with children.
+      if (hasSubtreeChanged(prev, next, next.qConfig.subQuestions)) {
+        return false;
+      }
   }
 
   return true;
