@@ -231,6 +231,43 @@ const QuestionBlock = ({
   );
 };
 
+// --- OPTIMIZATION HELPERS ---
+
+// Recursively check if any question in the subtree has changed data
+const hasSubtreeChanged = (subQuestions, prevData, nextData) => {
+  if (!Array.isArray(subQuestions)) return false;
+
+  for (const subQ of subQuestions) {
+    const key = subQ.name || subQ.key;
+    // Check if this question's data changed
+    if (prevData[key] !== nextData[key]) return true;
+
+    // Recursively check children
+    if (subQ.subQuestions) {
+      if (hasSubtreeChanged(subQ.subQuestions, prevData, nextData)) return true;
+    }
+  }
+  return false;
+};
+
+// Recursively check if validation errors changed for subtree
+const hasSubtreeErrorChanged = (subQuestions, prevErrors, nextErrors) => {
+  if (!Array.isArray(subQuestions)) return false;
+
+  for (const subQ of subQuestions) {
+    const key = subQ.name || subQ.key;
+    // Check if error status changed for this key
+    if (prevErrors.includes(key) !== nextErrors.includes(key)) return true;
+
+    // Recursively check children
+    if (subQ.subQuestions) {
+      if (hasSubtreeErrorChanged(subQ.subQuestions, prevErrors, nextErrors)) return true;
+    }
+  }
+  return false;
+};
+
+
 // Custom Comparator
 const arePropsEqual = (prev, next) => {
   const name = next.qConfig.name || next.qConfig.key;
@@ -255,9 +292,21 @@ const arePropsEqual = (prev, next) => {
     if (prev.q27VideoConfirmed !== next.q27VideoConfirmed) return false;
   }
 
-  // 4. Subquestions check
+  // 4. Subquestions check - OPTIMIZED
+  // Previously: always returned false if subQuestions existed (disabling memoization).
+  // Now: checks if relevant data or errors in the subtree actually changed.
   if (next.qConfig.subQuestions && next.qConfig.subQuestions.length > 0) {
-      return false;
+      // If data in subtree changed, we must re-render
+      if (hasSubtreeChanged(next.qConfig.subQuestions, prev.formData, next.formData)) {
+          return false;
+      }
+
+      // If validation errors changed, check if they affect the subtree
+      if (prev.validationErrors !== next.validationErrors) {
+          if (hasSubtreeErrorChanged(next.qConfig.subQuestions, prev.validationErrors, next.validationErrors)) {
+              return false;
+          }
+      }
   }
 
   return true;
