@@ -231,19 +231,47 @@ const QuestionBlock = ({
   );
 };
 
+// Helper: check if any relevant part of the subtree depends on changed data
+const hasSubtreeChanged = (qConfig, prevFormDataEn, nextFormDataEn, prevFormData, nextFormData, prevValidationErrors, nextValidationErrors) => {
+  // 1. Check if the question itself changed (already checked in main comparator, but good for recursion)
+  const key = qConfig.name || qConfig.key;
+  if (prevFormData[key] !== nextFormData[key]) return true;
+
+  // Check if validation errors changed for this key
+  if (prevValidationErrors.includes(key) !== nextValidationErrors.includes(key)) return true;
+
+  // Check this node's condition (visibility of this node)
+  if (qConfig.condition) {
+    if (prevFormDataEn[qConfig.condition.key] !== nextFormDataEn[qConfig.condition.key]) return true;
+  }
+
+  // Recurse
+  if (qConfig.subQuestions) {
+    for (const subQ of qConfig.subQuestions) {
+       if (hasSubtreeChanged(subQ, prevFormDataEn, nextFormDataEn, prevFormData, nextFormData, prevValidationErrors, nextValidationErrors)) {
+         return true;
+       }
+    }
+  }
+
+  return false;
+};
+
 // Custom Comparator
 const arePropsEqual = (prev, next) => {
   const name = next.qConfig.name || next.qConfig.key;
 
   // 1. Check strict dependencies (including i18n)
-  if (prev.t !== next.t) return false; // FIX: Language change detection
-  if (prev.questionnaireData !== next.questionnaireData) return false; // FIX: Data change
+  if (prev.t !== next.t) return false; // Language change
+  if (prev.questionnaireData !== next.questionnaireData) return false; // Data change
 
   if (prev.qConfig !== next.qConfig) return false;
   if (prev.displayNumber !== next.displayNumber) return false;
+
+  // Check validation errors for the current question
   if (prev.validationErrors.includes(name) !== next.validationErrors.includes(name)) return false;
 
-  if (prev.randomPatientId !== next.randomPatientId) return false; // FIX: Q44 dependency
+  if (prev.randomPatientId !== next.randomPatientId) return false; // Q44 dependency
 
   // 2. Check value change
   if (prev.formData[name] !== next.formData[name]) return false;
@@ -255,9 +283,20 @@ const arePropsEqual = (prev, next) => {
     if (prev.q27VideoConfirmed !== next.q27VideoConfirmed) return false;
   }
 
-  // 4. Subquestions check
+  // 4. Subquestions check - OPTIMIZED
   if (next.qConfig.subQuestions && next.qConfig.subQuestions.length > 0) {
-      return false;
+      // Instead of always returning false, check if the subtree actually needs an update.
+      // We need to check if any value or condition in the subtree has changed.
+      const changed = hasSubtreeChanged(
+        next.qConfig,
+        prev.formDataEn,
+        next.formDataEn,
+        prev.formData,
+        next.formData,
+        prev.validationErrors,
+        next.validationErrors
+      );
+      if (changed) return false;
   }
 
   return true;
