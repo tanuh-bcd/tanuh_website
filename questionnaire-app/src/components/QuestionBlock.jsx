@@ -231,6 +231,42 @@ const QuestionBlock = ({
   );
 };
 
+// Helper to recursively collect all keys relevant to a subtree
+const getSubtreeKeys = (qConfig, keys = new Set()) => {
+  const name = qConfig.name || qConfig.key;
+  keys.add(name);
+
+  // Add condition key if it exists (affects visibility)
+  if (qConfig.condition && qConfig.condition.key) {
+    keys.add(qConfig.condition.key);
+  }
+
+  if (qConfig.subQuestions && Array.isArray(qConfig.subQuestions)) {
+    qConfig.subQuestions.forEach(subQ => getSubtreeKeys(subQ, keys));
+  }
+  return keys;
+};
+
+// Helper to check if any relevant data in the subtree has changed
+const hasSubtreeChanged = (prev, next, qConfig) => {
+  const relevantKeys = getSubtreeKeys(qConfig);
+
+  for (let key of relevantKeys) {
+    // Check if form data value changed
+    if (prev.formData[key] !== next.formData[key]) return true;
+
+    // Check if English form data value changed (used for logic/conditions)
+    if (prev.formDataEn[key] !== next.formDataEn[key]) return true;
+
+    // Check if validation error status changed
+    const prevErr = prev.validationErrors.includes(key);
+    const nextErr = next.validationErrors.includes(key);
+    if (prevErr !== nextErr) return true;
+  }
+
+  return false;
+};
+
 // Custom Comparator
 const arePropsEqual = (prev, next) => {
   const name = next.qConfig.name || next.qConfig.key;
@@ -255,9 +291,14 @@ const arePropsEqual = (prev, next) => {
     if (prev.q27VideoConfirmed !== next.q27VideoConfirmed) return false;
   }
 
-  // 4. Subquestions check
+  // 4. Subquestions check - OPTIMIZED
+  // Instead of always returning false (force render) if subquestions exist,
+  // we check if any data relevant to the subtree has actually changed.
   if (next.qConfig.subQuestions && next.qConfig.subQuestions.length > 0) {
-      return false;
+      if (hasSubtreeChanged(prev, next, next.qConfig)) {
+          return false; // Re-render if subtree data changed
+      }
+      return true; // Skip render if subtree is stable
   }
 
   return true;
