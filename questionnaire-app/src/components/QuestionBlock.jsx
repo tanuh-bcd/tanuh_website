@@ -255,12 +255,29 @@ const arePropsEqual = (prev, next) => {
     if (prev.q27VideoConfirmed !== next.q27VideoConfirmed) return false;
   }
 
-  // 4. Subquestions check
-  if (next.qConfig.subQuestions && next.qConfig.subQuestions.length > 0) {
+  // 4. Subtree check (Recursive dependency check)
+  // Instead of always re-rendering if subquestions exist, we check if any data
+  // in the entire subtree (this question + subquestions) has changed.
+  if (hasSubtreeChanged(prev.formData, next.formData, next.qConfig)) {
       return false;
   }
 
   return true;
+};
+
+// Helper to check if any question in the subtree has a changed value
+const hasSubtreeChanged = (prevData, nextData, qConfig) => {
+  const key = qConfig.name || qConfig.key;
+  // Check own answer
+  if (prevData[key] !== nextData[key]) return true;
+
+  // Check subquestions recursively
+  if (qConfig.subQuestions && Array.isArray(qConfig.subQuestions)) {
+    for (const subQ of qConfig.subQuestions) {
+      if (hasSubtreeChanged(prevData, nextData, subQ)) return true;
+    }
+  }
+  return false;
 };
 
 export default memo(QuestionBlock, arePropsEqual);
