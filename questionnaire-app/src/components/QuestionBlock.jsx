@@ -1,5 +1,30 @@
 import React, { memo } from 'react';
 
+// Helper for caching dependency keys to avoid re-traversing qConfig
+const dependencyCache = new WeakMap();
+
+const getDependencyKeys = (qConfig) => {
+  if (dependencyCache.has(qConfig)) return dependencyCache.get(qConfig);
+
+  const keys = new Set();
+  const traverse = (questions) => {
+    if (!questions) return;
+    questions.forEach(q => {
+      const key = q.name || q.key;
+      keys.add(key);
+      if (q.condition) keys.add(q.condition.key);
+      if (q.subQuestions) traverse(q.subQuestions);
+    });
+  };
+
+  if (qConfig.subQuestions) {
+    traverse(qConfig.subQuestions);
+  }
+
+  dependencyCache.set(qConfig, keys);
+  return keys;
+};
+
 // Optimization: Extracted this component to apply React.memo.
 // The Questionnaire component renders many of these blocks.
 // Memoization prevents re-rendering all questions when typing in a single field,
@@ -257,7 +282,20 @@ const arePropsEqual = (prev, next) => {
 
   // 4. Subquestions check
   if (next.qConfig.subQuestions && next.qConfig.subQuestions.length > 0) {
-      return false;
+      // OPTIMIZED: Instead of blindly returning false, check if any dependency in the subtree changed.
+      const depKeys = getDependencyKeys(next.qConfig);
+      for (const key of depKeys) {
+          if (prev.formData[key] !== next.formData[key]) return false;
+          // Check English data for conditions
+          if (prev.formDataEn[key] !== next.formDataEn[key]) return false;
+
+          // Check validation errors
+          const prevHasError = prev.validationErrors.includes(key);
+          const nextHasError = next.validationErrors.includes(key);
+          if (prevHasError !== nextHasError) return false;
+      }
+      // If no relevant data changed, we can skip re-render
+      return true;
   }
 
   return true;
