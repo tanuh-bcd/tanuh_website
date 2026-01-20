@@ -231,6 +231,46 @@ const QuestionBlock = ({
   );
 };
 
+// Helper for caching dependency keys
+const dependencyCache = new WeakMap();
+
+const getSubtreeKeys = (qConfig) => {
+  if (dependencyCache.has(qConfig)) {
+    return dependencyCache.get(qConfig);
+  }
+
+  const keys = new Set();
+  const myself = qConfig.name || qConfig.key;
+  if (myself) keys.add(myself);
+
+  if (qConfig.subQuestions) {
+    const traverse = (questions) => {
+      questions.forEach(q => {
+        const key = q.name || q.key;
+        if (key) keys.add(key);
+
+        // Add condition dependency
+        if (q.condition && q.condition.key) {
+           keys.add(q.condition.key);
+        }
+
+        // Add otherOptionId if present (for checkbox-plus-text)
+        if (q.otherOptionId) {
+            keys.add(q.otherOptionId);
+        }
+
+        if (q.subQuestions) {
+          traverse(q.subQuestions);
+        }
+      });
+    };
+    traverse(qConfig.subQuestions);
+  }
+
+  dependencyCache.set(qConfig, keys);
+  return keys;
+};
+
 // Custom Comparator
 const arePropsEqual = (prev, next) => {
   const name = next.qConfig.name || next.qConfig.key;
@@ -255,9 +295,12 @@ const arePropsEqual = (prev, next) => {
     if (prev.q27VideoConfirmed !== next.q27VideoConfirmed) return false;
   }
 
-  // 4. Subquestions check
-  if (next.qConfig.subQuestions && next.qConfig.subQuestions.length > 0) {
-      return false;
+  // 4. Subtree check
+  // Check if any key in the subtree has changed in formData or formDataEn
+  const subtreeKeys = getSubtreeKeys(next.qConfig);
+  for (const key of subtreeKeys) {
+      if (prev.formData[key] !== next.formData[key]) return false;
+      if (prev.formDataEn[key] !== next.formDataEn[key]) return false;
   }
 
   return true;
