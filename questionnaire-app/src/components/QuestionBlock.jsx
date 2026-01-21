@@ -1,4 +1,5 @@
 import React, { memo } from 'react';
+import { getSubtreeKeys } from '../utils/memoUtils';
 
 // Optimization: Extracted this component to apply React.memo.
 // The Questionnaire component renders many of these blocks.
@@ -257,7 +258,15 @@ const arePropsEqual = (prev, next) => {
 
   // 4. Subquestions check
   if (next.qConfig.subQuestions && next.qConfig.subQuestions.length > 0) {
-      return false;
+    const subtreeKeys = getSubtreeKeys(next.qConfig);
+    for (const key of subtreeKeys) {
+      // Check for value changes in the entire subtree
+      if (prev.formData[key] !== next.formData[key]) return false;
+      // Check for validation error changes in the entire subtree
+      if (prev.validationErrors.includes(key) !== next.validationErrors.includes(key)) return false;
+    }
+    // If no relevant keys changed, it's safe to memoize!
+    return true;
   }
 
   return true;
