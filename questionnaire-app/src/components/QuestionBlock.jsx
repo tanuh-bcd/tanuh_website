@@ -1,4 +1,5 @@
 import React, { memo } from 'react';
+import { getSubtreeKeys } from '../utils/memoUtils';
 
 // Optimization: Extracted this component to apply React.memo.
 // The Questionnaire component renders many of these blocks.
@@ -256,8 +257,18 @@ const arePropsEqual = (prev, next) => {
   }
 
   // 4. Subquestions check
+  // Optimized: Use recursive key checking instead of blanket re-render
   if (next.qConfig.subQuestions && next.qConfig.subQuestions.length > 0) {
-      return false;
+    const subtreeKeys = getSubtreeKeys(next.qConfig);
+    for (const key of subtreeKeys) {
+      if (prev.formData[key] !== next.formData[key]) return false;
+      if (prev.formDataEn && next.formDataEn && prev.formDataEn[key] !== next.formDataEn[key]) return false;
+
+      const prevHasError = prev.validationErrors.includes(key);
+      const nextHasError = next.validationErrors.includes(key);
+      if (prevHasError !== nextHasError) return false;
+    }
+    return true;
   }
 
   return true;
