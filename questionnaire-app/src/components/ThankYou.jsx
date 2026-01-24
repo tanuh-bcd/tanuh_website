@@ -120,7 +120,7 @@ function ThankYou({ riskResult, formData, sessionId, formStructure, questionnair
             y = 32;
         };
 
-        const addFooter = (pageNumber, totalPages) => {
+        const addFooter = (pageNumber) => {
             doc.setFont('helvetica', 'normal');
             doc.setFontSize(8);
             doc.setTextColor(150);
@@ -131,8 +131,8 @@ function ThankYou({ riskResult, formData, sessionId, formStructure, questionnair
 
         const addPageWithTemplate = () => {
            const currentPage = doc.internal.getNumberOfPages();
-           const totalPagesGuess = currentPage + 1;
-           addFooter(currentPage, totalPagesGuess);
+           // const totalPagesGuess = currentPage + 1;
+           addFooter(currentPage);
            doc.addPage();
            addHeader();
         };
@@ -353,7 +353,7 @@ function ThankYou({ riskResult, formData, sessionId, formStructure, questionnair
         const totalPages = doc.internal.getNumberOfPages();
         for (let i = 1; i <= totalPages; i++) {
             doc.setPage(i);
-            addFooter(i, totalPages);
+            addFooter(i);
         }
 
         // --- MODIFIED ---
