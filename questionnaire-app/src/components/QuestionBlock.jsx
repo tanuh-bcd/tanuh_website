@@ -1,4 +1,5 @@
 import React, { memo } from 'react';
+import { getSubtreeKeys } from '../utils/memoUtils';
 
 // Optimization: Extracted this component to apply React.memo.
 // The Questionnaire component renders many of these blocks.
@@ -268,20 +269,18 @@ const arePropsEqual = (prev, next) => {
     if (prev.q27VideoConfirmed !== next.q27VideoConfirmed) return false;
   }
 
-  // 4. Subquestions check
-  if (next.qConfig.subQuestions && next.qConfig.subQuestions.length > 0) {
-      return false;
+  // 4. Subtree dependencies check (OPTIMIZED)
+  const dependencies = getSubtreeKeys(next.qConfig);
+
+  // Check keys in formData
+  for (const key of dependencies.keys) {
+      if (prev.formData[key] !== next.formData[key]) return false;
   }
 
-  // 5. Other specify field check
-  if (next.qConfig.otherOptionId) {
-    const otherKey = next.qConfig.otherOptionId;
-    if (prev.formData[otherKey] !== next.formData[otherKey]) return false;
-    // Also check if the "Other" selection itself changed, though it's likely covered by name
+  // Check keys in formDataEn
+  for (const key of dependencies.enKeys) {
+      if (prev.formDataEn[key] !== next.formDataEn[key]) return false;
   }
-
-  // 6. Check if English form data changed for this question (affects "Other" visibility)
-  if (prev.formDataEn[name] !== next.formDataEn[name]) return false;
 
   return true;
 };
