@@ -7,7 +7,7 @@ import React, { memo } from 'react';
 const QuestionBlock = ({
   qConfig,
   questionnaireData,
-  questionnaireDataEn,
+  // questionnaireDataEn, // Unused
   formData,
   formDataEn,
   validationErrors,
