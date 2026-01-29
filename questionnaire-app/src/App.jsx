@@ -56,7 +56,6 @@ function App() {
   const questionnaireData = t('questionnaire:questions', { returnObjects: true });
   const questionnaireDataEn = questionnaireDataEng.questions;
   const formStructureEn = questionnaireDataEng.formStructure;
-  const questionnaireDataEngRaw = questionnaireDataEng;
   
   // --- END MODIFICATION ---
 
@@ -116,7 +115,7 @@ function App() {
         alert(t('questionnaire:ui.errors.validationAlert')); // Use translated error
         setFinalFormData(null);
       }
-    } catch (error) {
+    } catch {
       alert('Could not connect to the server to submit the form.'); // Generic error
       setFinalFormData(null);
     } finally {
