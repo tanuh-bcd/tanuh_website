@@ -56,7 +56,6 @@ function App() {
   const questionnaireData = t('questionnaire:questions', { returnObjects: true });
   const questionnaireDataEn = questionnaireDataEng.questions;
   const formStructureEn = questionnaireDataEng.formStructure;
-  const questionnaireDataEngRaw = questionnaireDataEng;
   
   // --- END MODIFICATION ---
 
@@ -117,6 +116,7 @@ function App() {
         setFinalFormData(null);
       }
     } catch (error) {
+      console.error(error);
       alert('Could not connect to the server to submit the form.'); // Generic error
       setFinalFormData(null);
     } finally {
