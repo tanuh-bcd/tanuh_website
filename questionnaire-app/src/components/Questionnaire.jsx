@@ -20,10 +20,11 @@ function Questionnaire({ onSubmit, isSubmitting, formStructure, questionnaireDat
   
   // NEW: Initialize i18next hook *only* for UI text
 
-  const { t } = useTranslation('questionnaire');
+  const { t, i18n } = useTranslation('questionnaire');
   
   // NEW: Load 'ui' text from the hook
-  const ui = t('ui', { returnObjects: true });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const ui = useMemo(() => t('ui', { returnObjects: true }), [t, i18n.language]);
 
 
   // State hooks
