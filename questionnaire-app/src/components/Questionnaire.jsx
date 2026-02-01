@@ -20,10 +20,11 @@ function Questionnaire({ onSubmit, isSubmitting, formStructure, questionnaireDat
   
   // NEW: Initialize i18next hook *only* for UI text
 
-  const { t } = useTranslation('questionnaire');
+  const { t, i18n } = useTranslation('questionnaire');
   
   // NEW: Load 'ui' text from the hook
-  const ui = t('ui', { returnObjects: true });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const ui = useMemo(() => t('ui', { returnObjects: true }), [t, i18n.language]);
 
 
   // State hooks
@@ -346,122 +347,6 @@ function Questionnaire({ onSubmit, isSubmitting, formStructure, questionnaireDat
 
   
     onSubmit(dataToSubmit, dataToSubmitEn);
-  };
-
-  // renderInput - Modified to use translated data
-  const renderInput = (qConfig) => { 
-    // 'questionnaireData' is now a prop
-    const data = questionnaireData[qConfig.key];
-    if (!data) return <p>{t('ui.errors.questionNotFound', { key: qConfig.key })}</p>;
-    
-    const name = qConfig.name || qConfig.key;
-    let placeholder = qConfig.placeholder || '';
-    if (qConfig.key === 'Q44') {
-        placeholder = randomPatientId; 
-    }
-
-    if (!Array.isArray(data.answers) || data.answers.length === 0) {
-      if (qConfig.type === 'number') {
-        const minAttr = qConfig.min !== undefined ? qConfig.min : undefined;
-        const maxAttr = qConfig.max !== undefined ? qConfig.max : undefined;
-        const stepAttr = qConfig.step !== undefined ? qConfig.step : undefined;
-
-        return (
-          <>
-            <input
-              type="number"
-              name={name}
-              placeholder={placeholder}
-              value={formData[name] || ''}
-              onChange={handleChange}
-              className="text-input"
-              min={minAttr}
-              max={maxAttr}
-              step={stepAttr}
-            />
-            {/* <-- paste the error message snippet here */}
-            {validationErrors.includes(name) && (
-              <div className="field-error">
-                {qConfig.min !== undefined && qConfig.max !== undefined
-                  ? `${t('ui.invalidInput.numberPrefix')} ${qConfig.min} ${t('ui.invalidInput.and')} ${qConfig.max}.`
-                  : `${t('ui.invalidInput.validInput')} `}
-              </div>
-            )}
-          </>
-        );
-      }
-      return <input 
-        type={qConfig.type || 'text'} 
-        name={name} 
-        placeholder={placeholder} 
-        value={formData[name] || ''} 
-        onChange={handleChange} 
-        className="text-input" 
-      />;
-    }
-    
-    switch (qConfig.type) {
-       case 'select':
-       case 'select-plus-text':
-         return (
-           <>
-             <select name={name} onChange={handleChange} value={formData[name] || ""} className="select-input">
-               <option value="" disabled>{t('ui.inputs.selectDefault')}</option>
-               {data.answers.map((ans, i) => <option key={i} value={ans}>{ans}</option>)}
-             </select>
-             {qConfig.type === 'select-plus-text' && formDataEn[name] === 'Other' && (
-               <input 
-                 type="text" 
-                 name={qConfig.otherOptionId} 
-                 placeholder={qConfig.otherPlaceholder || t('ui.inputs.otherPlaceholder', 'Specify other')} 
-                 onChange={handleChange} 
-                 className="text-input" 
-                 value={formData[qConfig.otherOptionId] || ''}
-                 required={qConfig.required}
-               />
-             )}
-           </>
-         );
-       case 'checkbox':
-       case 'checkbox-plus-text':
-         return (
-           <div className="checkbox-group vertical">
-             {data.answers.map((ans, i) => (
-               <label key={i}>
-                 <input 
-                   type="checkbox" name={name} value={ans} onChange={handleChange} 
-                   checked={formData[name]?.includes(ans) || false}
-                 /> {ans}
-               </label>
-             ))}
-             {qConfig.type === 'checkbox-plus-text' && (formDataEn[name]?.includes('Other') || formDataEn[name]?.includes('others')) && (
-               <input 
-                 type="text" 
-                 name={qConfig.otherOptionId} 
-                 placeholder={qConfig.otherPlaceholder || t('ui.inputs.otherPlaceholder', 'Specify other')} 
-                 onChange={handleChange} 
-                 className="text-input" 
-                 value={formData[qConfig.otherOptionId] || ''}
-                 required={qConfig.required}
-               />
-             )}
-           </div>
-         );
-       case 'radio':
-       default:
-         return (
-           <div className="radio-group vertical">
-             {data.answers.map((ans, i) => (
-               <label key={i}>
-                 <input 
-                   type="radio" name={name} value={ans} onChange={handleChange} 
-                   checked={formData[name] === ans}
-                 /> {ans}
-               </label>
-             ))}
-           </div>
-         );
-    }
   };
 
   // renderSubQuestions - Modified to use translated data
