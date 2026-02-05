@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import './Questionnaire.css';
 // NEW: Import the translation hook
 import { useTranslation } from 'react-i18next';
@@ -38,26 +38,6 @@ function Questionnaire({ onSubmit, isSubmitting, formStructure, questionnaireDat
   const [q27VideoConfirmed, setQ27VideoConfirmed] = useState(false);
   const [randomPatientId, setRandomPatientId] = useState('');
   
-  // Helper to get the translated value for a condition
-  const getTranslatedConditionValue = useCallback((condition) => {
-    if (!condition || !condition.key || !condition.value) return null;
-    
-    // 1. Get English answers for the condition key
-    const enAnswers = questionnaireDataEn[condition.key]?.answers;
-    if (!Array.isArray(enAnswers)) return null;
-
-    // 2. Find index of the required value (e.g., "No" is index 1)
-    const index = enAnswers.indexOf(condition.value);
-    if (index === -1) return null;
-
-    // 3. Get the Translated answer at that index
-    // We use the 't' function logic or direct prop access
-    const translatedAnswers = questionnaireData[condition.key]?.answers;
-    
-    // Fallback to English if translation missing
-    return translatedAnswers?.[index] || enAnswers[index];
-  }, [questionnaireData, questionnaireDataEn]);
-
   // Effect to set random ID and defaults
   useEffect(() => {
     const newId = generateRandomId();
@@ -69,60 +49,95 @@ function Questionnaire({ onSubmit, isSubmitting, formStructure, questionnaireDat
       Q45: t('ui.defaults.q45') // Use default from JSON
     }));
   }, [t]); // 't' dependency re-runs this if language changes
-  
-  
-  // Progress calculation - OPTIMIZED: Moved to useMemo to avoid extra render cycle
-  const progress = useMemo(() => {
-    if (!Array.isArray(formStructure)) return 0;
 
-    const getVisibleQuestionKeys = (currentFormData, currentFormDataEn) => {
-      const visibleKeys = new Set();
-      const traverse = (questions) => {
-          if (!Array.isArray(questions)) return; // Safety check
-          questions.forEach(q => {
-              const qKey = q.name || q.key;
-
-              // NEW: Check if this question (the parent) should be visible
-              if (q.condition && q.condition.key !== qKey) {
-                if (currentFormDataEn[q.condition.key] !== q.condition.value) {
-                  return;
-                }
-              }
-
-              visibleKeys.add(qKey); 
-              if (q.otherOptionId) {
-                const valEn = currentFormDataEn[qKey];
-                const isOtherSelected = Array.isArray(valEn) 
-                  ? (valEn.includes('Other') || valEn.includes('others'))
-                  : (valEn === 'Other');
-                if (isOtherSelected) {
-                  visibleKeys.add(q.otherOptionId);
-                }
-              }
-              
-              if (q.subQuestions && q.condition) {
-                  // If it's a fork (condition is on another question)
-                  if (q.condition.key !== qKey) {
-                    if (currentFormDataEn[q.condition.key] === q.condition.value) {
-                      traverse(q.subQuestions);
-                    }
-                  } else {
-                    // It's a self-trigger (condition is on this question)
-                    const translatedConditionValue = getTranslatedConditionValue(q.condition);
-                    if (currentFormData[q.condition.key] === translatedConditionValue) {
-                        traverse(q.subQuestions);
-                    }
-                  }
-              }
-          });
-      };
-      formStructure.forEach(section => traverse(section.questions));
-      return visibleKeys;
+  // Optimization: Identify keys that affect visibility ("controlling keys")
+  // This runs only when formStructure changes (rarely)
+  const controllingKeys = useMemo(() => {
+    const keys = new Set();
+    const traverse = (questions) => {
+      if (!Array.isArray(questions)) return;
+      questions.forEach(q => {
+        if (q.condition) keys.add(q.condition.key);
+        // If a question has an "Other" option, the question itself controls the visibility of that option
+        if (q.otherOptionId) keys.add(q.name || q.key);
+        if (q.subQuestions) traverse(q.subQuestions);
+      });
     };
+    if (Array.isArray(formStructure)) {
+      formStructure.forEach(section => traverse(section.questions));
+    }
+    return keys;
+  }, [formStructure]);
 
-    const countAnsweredVisibleQuestions = (currentFormData, visibleKeysSet) => {
+  // Optimization: Generate a signature that only changes when a controlling key's value changes
+  // This prevents the expensive visibility tree traversal on every keystroke in non-controlling fields
+  const visibilitySignature = useMemo(() => {
+    return Array.from(controllingKeys).map(k => {
+      const val = formDataEn[k];
+      return Array.isArray(val) ? val.slice().sort().join(',') : val;
+    }).join('|');
+  }, [controllingKeys, formDataEn]);
+
+  // Optimization: Calculate visible keys set only when signature changes
+  const visibleKeysSet = useMemo(() => {
+    const visibleKeys = new Set();
+    if (!Array.isArray(formStructure)) return visibleKeys;
+
+    const traverse = (questions) => {
+        if (!Array.isArray(questions)) return;
+        questions.forEach(q => {
+            const qKey = q.name || q.key;
+
+            // Check if parent condition (Fork) is met
+            // We use English data for all condition checks for consistency
+            if (q.condition && q.condition.key !== qKey) {
+              if (formDataEn[q.condition.key] !== q.condition.value) {
+                return;
+              }
+            }
+
+            visibleKeys.add(qKey);
+
+            // Other option visibility
+            if (q.otherOptionId) {
+              const valEn = formDataEn[qKey];
+              const isOtherSelected = Array.isArray(valEn)
+                ? (valEn.includes('Other') || valEn.includes('others'))
+                : (valEn === 'Other');
+              if (isOtherSelected) {
+                visibleKeys.add(q.otherOptionId);
+              }
+            }
+
+            // Subquestions visibility
+            if (q.subQuestions) {
+                let showSub = true;
+                if (q.condition) {
+                     // Self-trigger check: condition depends on this question itself
+                     if (q.condition.key === qKey) {
+                        if (formDataEn[q.condition.key] !== q.condition.value) {
+                            showSub = false;
+                        }
+                     }
+                }
+
+                if (showSub) {
+                    traverse(q.subQuestions);
+                }
+            }
+        });
+    };
+    formStructure.forEach(section => traverse(section.questions));
+    return visibleKeys;
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [visibilitySignature, formStructure]); // Intentionally omit formDataEn to rely on signature
+
+
+  // Progress calculation - OPTIMIZED: Uses pre-calculated visibleKeysSet
+  const progress = useMemo(() => {
+    const countAnsweredVisibleQuestions = (currentFormData, visibleKeys) => {
         let answeredCount = 0;
-        visibleKeysSet.forEach(key => {
+        visibleKeys.forEach(key => {
             const value = currentFormData[key];
             if (value !== undefined && value !== null && value !== '' && (!Array.isArray(value) || value.length > 0)) {
                 answeredCount++;
@@ -131,12 +146,11 @@ function Questionnaire({ onSubmit, isSubmitting, formStructure, questionnaireDat
         return answeredCount;
     };
 
-    const visibleKeysSet = getVisibleQuestionKeys(formData, formDataEn);
     const answeredCount = countAnsweredVisibleQuestions(formData, visibleKeysSet);
     const totalVisible = visibleKeysSet.size;
     const newProgress = totalVisible > 0 ? Math.round((answeredCount / totalVisible) * 100) : 0;
     return Math.min(newProgress, 100);
-  }, [formData, formDataEn, formStructure, getTranslatedConditionValue]);
+  }, [formData, visibleKeysSet]);
 
 
   // handleChange - Refactored to avoid side effects
@@ -187,7 +201,7 @@ function Questionnaire({ onSubmit, isSubmitting, formStructure, questionnaireDat
   };
 
 
-  // getVisibleRequiredQuestions - Modified to use translated "Yes"
+  // getVisibleRequiredQuestions - Optimized to use visibleKeysSet
   const getVisibleRequiredQuestions = () => {
     let visibleRequired = [];
     const traverseQuestions = (questions) => {
@@ -195,39 +209,19 @@ function Questionnaire({ onSubmit, isSubmitting, formStructure, questionnaireDat
         for (const q of questions) {
             const qKey = q.name || q.key;
 
-            // NEW: Check if this question (the parent) should be visible
-            if (q.condition && q.condition.key !== qKey) {
-              if (formDataEn[q.condition.key] !== q.condition.value) {
-                continue;
-              }
-            }
-
-            if (q.required) {
-                visibleRequired.push(qKey);
-            }
-            if (q.otherOptionId && q.required) {
-              const valEn = formDataEn[qKey];
-              const isOtherSelected = Array.isArray(valEn) 
-                ? (valEn.includes('Other') || valEn.includes('others'))
-                : (valEn === 'Other');
-              if (isOtherSelected) {
-                visibleRequired.push(q.otherOptionId);
-              }
-            }
-            
-            if (q.subQuestions && q.condition) {
-                // If it's a fork (condition is on another question)
-                if (q.condition.key !== qKey) {
-                  if (formDataEn[q.condition.key] === q.condition.value) {
-                    traverseQuestions(q.subQuestions);
-                  }
-                } else {
-                  // It's a self-trigger (condition is on this question)
-                  const translatedConditionValue = getTranslatedConditionValue(q.condition);
-                  if (formData[q.condition.key] === translatedConditionValue) {
-                      traverseQuestions(q.subQuestions);
-                  }
+            if (visibleKeysSet.has(qKey)) {
+                if (q.required) {
+                    visibleRequired.push(qKey);
                 }
+                if (q.otherOptionId && q.required) {
+                   if (visibleKeysSet.has(q.otherOptionId)) {
+                        visibleRequired.push(q.otherOptionId);
+                   }
+                }
+            }
+            // Recurse to find nested required questions
+            if (q.subQuestions) {
+                traverseQuestions(q.subQuestions);
             }
         }
     };
@@ -238,6 +232,7 @@ function Questionnaire({ onSubmit, isSubmitting, formStructure, questionnaireDat
     return visibleRequired;
   };
   // Helper: validate numeric rules and return array of failing keys
+  // Optimized to use visibleKeysSet for visibility checks
   const validateNumericRules = (data) => {
     const failures = [];
 
@@ -248,11 +243,9 @@ function Questionnaire({ onSubmit, isSubmitting, formStructure, questionnaireDat
       for (const q of questions) {
         const key = q.name || q.key;
 
-        // NEW: Check if this question (the parent) should be visible
-        if (q.condition && q.condition.key !== key) {
-          if (formDataEn[q.condition.key] !== q.condition.value) {
-            continue;
-          }
+        // Skip if not visible
+        if (!visibleKeysSet.has(key)) {
+           continue;
         }
 
         // Only validate numeric fields that have value
@@ -280,17 +273,8 @@ function Questionnaire({ onSubmit, isSubmitting, formStructure, questionnaireDat
           }
         }
         // Recurse into subQuestions
-        if (q.subQuestions && q.condition) {
-           if (q.condition.key !== key) {
-             if (formDataEn[q.condition.key] === q.condition.value) {
-               traverse(q.subQuestions);
-             }
-           } else {
-             const translatedConditionValue = getTranslatedConditionValue(q.condition);
-             if (data[q.condition.key] === translatedConditionValue) {
-               traverse(q.subQuestions);
-             }
-           }
+        if (q.subQuestions) {
+           traverse(q.subQuestions);
         }
       }
     };
@@ -346,122 +330,6 @@ function Questionnaire({ onSubmit, isSubmitting, formStructure, questionnaireDat
 
   
     onSubmit(dataToSubmit, dataToSubmitEn);
-  };
-
-  // renderInput - Modified to use translated data
-  const renderInput = (qConfig) => { 
-    // 'questionnaireData' is now a prop
-    const data = questionnaireData[qConfig.key];
-    if (!data) return <p>{t('ui.errors.questionNotFound', { key: qConfig.key })}</p>;
-    
-    const name = qConfig.name || qConfig.key;
-    let placeholder = qConfig.placeholder || '';
-    if (qConfig.key === 'Q44') {
-        placeholder = randomPatientId; 
-    }
-
-    if (!Array.isArray(data.answers) || data.answers.length === 0) {
-      if (qConfig.type === 'number') {
-        const minAttr = qConfig.min !== undefined ? qConfig.min : undefined;
-        const maxAttr = qConfig.max !== undefined ? qConfig.max : undefined;
-        const stepAttr = qConfig.step !== undefined ? qConfig.step : undefined;
-
-        return (
-          <>
-            <input
-              type="number"
-              name={name}
-              placeholder={placeholder}
-              value={formData[name] || ''}
-              onChange={handleChange}
-              className="text-input"
-              min={minAttr}
-              max={maxAttr}
-              step={stepAttr}
-            />
-            {/* <-- paste the error message snippet here */}
-            {validationErrors.includes(name) && (
-              <div className="field-error">
-                {qConfig.min !== undefined && qConfig.max !== undefined
-                  ? `${t('ui.invalidInput.numberPrefix')} ${qConfig.min} ${t('ui.invalidInput.and')} ${qConfig.max}.`
-                  : `${t('ui.invalidInput.validInput')} `}
-              </div>
-            )}
-          </>
-        );
-      }
-      return <input 
-        type={qConfig.type || 'text'} 
-        name={name} 
-        placeholder={placeholder} 
-        value={formData[name] || ''} 
-        onChange={handleChange} 
-        className="text-input" 
-      />;
-    }
-    
-    switch (qConfig.type) {
-       case 'select':
-       case 'select-plus-text':
-         return (
-           <>
-             <select name={name} onChange={handleChange} value={formData[name] || ""} className="select-input">
-               <option value="" disabled>{t('ui.inputs.selectDefault')}</option>
-               {data.answers.map((ans, i) => <option key={i} value={ans}>{ans}</option>)}
-             </select>
-             {qConfig.type === 'select-plus-text' && formDataEn[name] === 'Other' && (
-               <input 
-                 type="text" 
-                 name={qConfig.otherOptionId} 
-                 placeholder={qConfig.otherPlaceholder || t('ui.inputs.otherPlaceholder', 'Specify other')} 
-                 onChange={handleChange} 
-                 className="text-input" 
-                 value={formData[qConfig.otherOptionId] || ''}
-                 required={qConfig.required}
-               />
-             )}
-           </>
-         );
-       case 'checkbox':
-       case 'checkbox-plus-text':
-         return (
-           <div className="checkbox-group vertical">
-             {data.answers.map((ans, i) => (
-               <label key={i}>
-                 <input 
-                   type="checkbox" name={name} value={ans} onChange={handleChange} 
-                   checked={formData[name]?.includes(ans) || false}
-                 /> {ans}
-               </label>
-             ))}
-             {qConfig.type === 'checkbox-plus-text' && (formDataEn[name]?.includes('Other') || formDataEn[name]?.includes('others')) && (
-               <input 
-                 type="text" 
-                 name={qConfig.otherOptionId} 
-                 placeholder={qConfig.otherPlaceholder || t('ui.inputs.otherPlaceholder', 'Specify other')} 
-                 onChange={handleChange} 
-                 className="text-input" 
-                 value={formData[qConfig.otherOptionId] || ''}
-                 required={qConfig.required}
-               />
-             )}
-           </div>
-         );
-       case 'radio':
-       default:
-         return (
-           <div className="radio-group vertical">
-             {data.answers.map((ans, i) => (
-               <label key={i}>
-                 <input 
-                   type="radio" name={name} value={ans} onChange={handleChange} 
-                   checked={formData[name] === ans}
-                 /> {ans}
-               </label>
-             ))}
-           </div>
-         );
-    }
   };
 
   // renderSubQuestions - Modified to use translated data
