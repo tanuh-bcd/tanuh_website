@@ -226,12 +226,15 @@ app.post('/api/submit', async (req, res) => {
     }
 });
 
+const INST_QUESTIONS = ['Institute Name', 'Institute Name:', 'Enter the Hospital ID(If any, else leave):', 'Q45'];
+const AGE_QUESTIONS = ['What is your current age? (Please enter a number - years)', 'Q1'];
+
 // === NEW ENDPOINT: Stats Dashboard ===
 app.get('/api/stats', async (req, res) => {
     const pool = await getPool();
     try {
         // Fetch valid hospital names from bcd_application2 (whitelist approach, matching tanuh_bcd_website)
-        const [hospitalRows] = await pool.query("SELECT name, short_name FROM bcd_application2.hospitals WHERE name != 'Test'");
+        const [hospitalRows] = await pool.query("SELECT name, short_name FROM bcd_application2.hospitals WHERE name NOT IN ('Test', 'Tanuh Foundation')");
         const validNames = hospitalRows.map(r => r.name);
         const shortNameMap = Object.fromEntries(hospitalRows.map(r => [r.name, r.short_name || r.name]));
 
@@ -241,9 +244,6 @@ app.get('/api/stats', async (req, res) => {
                 riskBins: [], hospitalBins: [], ageBins: [], monthBins: []
             });
         }
-
-        const INST_QUESTIONS = ['Institute Name', 'Institute Name:', 'Enter the Hospital ID(If any, else leave):', 'Q45'];
-        const AGE_QUESTIONS = ['What is your current age? (Please enter a number - years)', 'Q1'];
 
         const instFilter = `
             JOIN (
@@ -360,7 +360,7 @@ app.get('/api/stats', async (req, res) => {
         // Institutions & States from bcd_application2.hospitals
         const institutionsEmpanelled = validNames.length;
         const [statesRes] = await pool.query(
-            "SELECT COUNT(DISTINCT state) as count FROM bcd_application2.hospitals WHERE name != 'Test' AND state IS NOT NULL AND state != ''"
+            "SELECT COUNT(DISTINCT state) as count FROM bcd_application2.hospitals WHERE name NOT IN ('Test', 'Tanuh Foundation') AND state IS NOT NULL AND state != ''"
         );
         const statesCount = statesRes[0].count;
 
@@ -384,6 +384,80 @@ app.get('/api/stats', async (req, res) => {
             error: err.message,
             stack: err.stack
         });
+    }
+});
+
+// === Hospital locations for India map ===
+const PINCODE_COORDS = {
+    '636007': [11.6687, 78.1543, 'Salem'],
+    '562160': [12.6324, 77.1836, 'Ramanagara'],
+    '570004': [12.2959, 76.6479, 'Mysuru'],
+    '533201': [16.5776, 81.9974, 'Amalapuram'],
+    '532484': [18.3969, 83.8450, 'Srikakulam'],
+    '636004': [11.6804, 78.1371, 'Salem'],
+    '500063': [17.4062, 78.4738, 'Hyderabad'],
+};
+const geocodeCache = {};
+
+async function geocodePincode(pincode, state) {
+    if (PINCODE_COORDS[pincode]) return PINCODE_COORDS[pincode];
+    if (geocodeCache[pincode]) return geocodeCache[pincode];
+    try {
+        const query = state ? `${pincode}, ${state}, India` : `${pincode}, India`;
+        const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=1&addressdetails=1`;
+        const resp = await fetch(url, { headers: { 'User-Agent': 'BCD-Website/1.0' } });
+        const data = await resp.json();
+        if (data && data.length) {
+            const addr = data[0].address || {};
+            const city = addr.city || addr.town || addr.county || addr.state_district || '';
+            const result = [parseFloat(data[0].lat), parseFloat(data[0].lon), city];
+            geocodeCache[pincode] = result;
+            return result;
+        }
+    } catch (e) {
+        console.warn(`Geocode failed for pincode ${pincode}:`, e.message);
+    }
+    return null;
+}
+
+app.get('/api/hospital-locations', async (req, res) => {
+    const pool = await getPool();
+    try {
+        const [hospitalRows] = await pool.query(
+            "SELECT id, name, short_name, pincode, state FROM bcd_application2.hospitals WHERE name NOT IN ('Test', 'Tanuh Foundation')"
+        );
+        const validNames = hospitalRows.map(r => r.name);
+        if (validNames.length === 0) return res.json([]);
+
+        const [subjectRows] = await pool.query(`
+            SELECT sd.answer AS institute, COUNT(DISTINCT s.session_id) AS subjects
+            FROM session_table s
+            JOIN session_data_table sd ON s.session_id = sd.session_id
+            WHERE sd.question IN (?) AND sd.answer IN (?)
+              AND s.snehita_lifetime_risk IS NOT NULL
+            GROUP BY sd.answer
+        `, [INST_QUESTIONS, validNames]);
+        const subjectCounts = Object.fromEntries(subjectRows.map(r => [r.institute, Number(r.subjects)]));
+
+        const locations = [];
+        for (const h of hospitalRows) {
+            const result = await geocodePincode(h.pincode || '', h.state || '');
+            if (!result) continue;
+            locations.push({
+                id: h.id,
+                name: h.name,
+                short_name: h.short_name || h.name,
+                city: result[2] || '',
+                state: h.state || '',
+                latitude: result[0],
+                longitude: result[1],
+                subjects: subjectCounts[h.name] || 0,
+            });
+        }
+        res.json(locations);
+    } catch (err) {
+        console.error('❌ Error fetching hospital locations:', err);
+        res.status(500).json({ success: false, message: 'Failed to fetch hospital locations.', error: err.message });
     }
 });
 

@@ -6,6 +6,7 @@ import {
 } from 'recharts';
 import './Stats.css';
 import RiskTable from './RiskTable';
+import IndiaMap from './IndiaMap';
 import mixpanel from 'mixpanel-browser';
 
 const AnimatedCounter = ({ value, duration = 1500 }) => {
@@ -178,6 +179,8 @@ const Stats = () => {
           </div>
         </div>
       </div>
+
+      <IndiaMap />
 
       <div className="charts-grid">
         {/* Risk Bins */}
